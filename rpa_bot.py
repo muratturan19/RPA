@@ -7,11 +7,6 @@ import threading
 import tkinter as tk
 from tkinter import messagebox
 
-try:
-    import pyautogui
-except Exception:  # pragma: no cover - pyautogui olmayabilir
-    pyautogui = None
-
 from data_reader import DataReader
 from logger import RPALogger
 
@@ -19,7 +14,7 @@ from logger import RPALogger
 class RPABot:
     """Excel verilerini GUI'ye otomatik giren bot."""
 
-    def __init__(self, gui_title: str = "Banka İşlemleri Giriş Sistemi") -> None:
+    def __init__(self, gui_title: str = "Menü / Dashboard") -> None:
         self.gui_title = gui_title
         self.reader = DataReader()
         self.logger = RPALogger()
@@ -61,24 +56,12 @@ class RPABot:
         data_list = self.reader.get_data()
         if not self._find_gui():
             return
-        if pyautogui is None:
-            self.logger.log_error("pyautogui bulunamadı")
-            return
 
         for idx, row in enumerate(data_list, start=1):
             self.logger.log_info(f"{idx}. satır işleniyor")
             try:
-                pyautogui.write(row.get("Tarih", ""))
-                pyautogui.press("tab")
-                pyautogui.write(row.get("Açıklama", ""))
-                pyautogui.press("tab")
-                pyautogui.write(str(row.get("Tutar", "")))
-                pyautogui.press("tab")
-                pyautogui.write("6232011")
-                pyautogui.press("tab")
-                time.sleep(2)
-                pyautogui.press("enter")  # Kaydet butonu
-                time.sleep(1)
+                self.gui_window.add_transaction_via_popup(row)
+                time.sleep(0.1)
                 self.logger.log_success(row)
             except Exception as exc:  # pragma: no cover - otomasyon hataları
                 self.logger.log_error(str(exc))
