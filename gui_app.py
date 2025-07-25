@@ -12,13 +12,13 @@ class BankGUI(tk.Tk):
 
     def __init__(self) -> None:
         super().__init__()
-        self.title("Banka İşlemleri Giriş Sistemi")
+        self.title("Menü / Dashboard")
         self.geometry("800x600")
 
         self.style = ttk.Style(self)
         self.style.theme_use("clam")
 
-        self._create_widgets()
+        self._create_dashboard()
 
         # Status bar
         self.status_frame = ttk.Frame(self)
@@ -31,8 +31,33 @@ class BankGUI(tk.Tk):
         self.progress_bar = ttk.Progressbar(self.status_frame, variable=self.progress_var, maximum=100)
         self.progress_bar.pack(side=tk.RIGHT, padx=5)
 
-    def _create_widgets(self) -> None:
-        frame = ttk.Frame(self)
+    # -------------------------------------- Dashboard
+    def _create_dashboard(self) -> None:
+        menu = ttk.Frame(self)
+        menu.pack(padx=10, pady=10, fill="x")
+
+        self.btn_banka_islemleri = ttk.Button(menu, text="Banka İşlemleri", command=self.open_form)
+        self.btn_banka_islemleri.pack(side="left")
+
+        # Ana tablo
+        self.tree = ttk.Treeview(self, columns=("Tarih", "Açıklama", "Tutar", "Hesap"), show="headings")
+        for col in ("Tarih", "Açıklama", "Tutar", "Hesap"):
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=150)
+        self.tree.pack(expand=True, fill="both", padx=10, pady=10)
+
+    # -------------------------------------- Form Popup
+    def open_form(self) -> None:
+        """Yeni işlem girişi için popup aç."""
+        if hasattr(self, "form_window") and self.form_window and self.form_window.winfo_exists():
+            self.form_window.lift()
+            return
+
+        self.form_window = tk.Toplevel(self)
+        self.form_window.title("Banka İşlemi Girişi")
+        self.form_window.grab_set()
+
+        frame = ttk.Frame(self.form_window)
         frame.pack(padx=10, pady=10, fill="x")
 
         ttk.Label(frame, text="Tarih").grid(row=0, column=0, sticky="w")
@@ -61,17 +86,16 @@ class BankGUI(tk.Tk):
         self.btn_temizle = ttk.Button(button_frame, text="Temizle", command=self.temizle)
         self.btn_temizle.pack(side="left", padx=5)
 
-        self.btn_cikis = ttk.Button(button_frame, text="Çıkış", command=self.destroy)
-        self.btn_cikis.pack(side="left", padx=5)
-
-        self.tree = ttk.Treeview(self, columns=("Tarih", "Açıklama", "Tutar", "Hesap"), show="headings")
-        for col in ("Tarih", "Açıklama", "Tutar", "Hesap"):
-            self.tree.heading(col, text=col)
-            self.tree.column(col, width=150)
-        self.tree.pack(expand=True, fill="both", padx=10, pady=10)
+        self.btn_iptal = ttk.Button(button_frame, text="İptal", command=self._close_form)
+        self.btn_iptal.pack(side="left", padx=5)
 
         for i in range(2):
             frame.columnconfigure(i, weight=1)
+
+    def _close_form(self) -> None:
+        if hasattr(self, "form_window") and self.form_window:
+            self.form_window.destroy()
+            self.form_window = None
 
     def kaydet(self) -> None:
         """Veriyi tabloya ekle."""
@@ -84,7 +108,7 @@ class BankGUI(tk.Tk):
             messagebox.showerror("Hata", "Tüm alanları doldurun")
             return
         self.tree.insert("", "end", values=(tarih, aciklama, tutar, hesap))
-        self.temizle()
+        self._close_form()
 
     def temizle(self) -> None:
         """Alanları temizle."""
@@ -104,3 +128,15 @@ class BankGUI(tk.Tk):
     def run(self) -> None:
         """GUI'yi çalıştırır"""
         self.mainloop()
+
+    # --- RPA integration
+    def add_transaction_via_popup(self, row: dict[str, str | float]) -> None:
+        """RPA için popup üzerinden kayıt ekler."""
+        self.open_form()
+        self.entry_tarih.insert(0, str(row.get("Tarih", "")))
+        self.entry_aciklama.insert(0, str(row.get("Açıklama", "")))
+        self.entry_tutar.insert(0, str(row.get("Tutar", "")))
+        self.entry_hesap.delete(0, tk.END)
+        self.entry_hesap.insert(0, "6232011")
+        self.kaydet()
+        self.update()  # arayüzü güncelle
