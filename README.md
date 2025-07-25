@@ -1,18 +1,21 @@
-# RPA Öğrenme Projesi
+# 🤖 RPA Öğrenme Projesi
 
-Bu proje, Excel verilerini kullanarak basit bir GUI uygulamasına otomatik giriş yapmayı amaçlayan bir öğrenme ortamıdır.
+Python ile Excel'den GUI formuna otomatik veri transferi öğrenme platformu.
 
-## Dosyalar
-- `requirements.txt` : Gerekli Python paketleri
-- `data/girdi_verisi.xlsx` : Örnek giriş verisi (dosyayı kendiniz oluşturun)
-- `logger.py` : Loglama modülü
-- `data_reader.py` : Excel okuma modülü
-- `gui_app.py` : Tkinter arayüzü
-- `rpa_bot.py` : Otomasyon botu
-- `main.py` : Başlatma menüsü
+## 📊 Proje Özellikleri
+- Gerçek banka işlem verisi kullanımı
+- POSH pattern filtreleme (15 haneli sayı ile biten)
+- Threading ile GUI donmaması
+- Renkli log sistemi
+- Modern Tkinter arayüzü
 
-## Kullanım
-1. `main.py` dosyasını çalıştırarak menüyü açın.
-2. GUI uygulamasını başlatabilir veya RPA botunu çalıştırabilirsiniz.
+## 🌟 Veri Formatı
+- **POS Satış işlemleri**: 25 adet
+- **ÜİY Komisyon işlemleri**: 23 adet  
+- **Toplam Net**: 84,058.40 TL
+- **Pattern**: `^POSH.*\/\d{15}$`
 
-Tüm çıktı ve loglar `logs` klasörüne kaydedilir.
+## 🚀 Kullanım
+1. `pip install -r requirements.txt`
+2. `python create_real_data.py` (test verisi oluştur)
+3. `python main.py` (ana program)

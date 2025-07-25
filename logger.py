@@ -6,6 +6,10 @@ import logging
 import datetime
 import pandas as pd
 from pathlib import Path
+from colorama import init, Fore, Style
+
+# Colorama'yı başlat
+init(autoreset=True)
 
 
 class RPALogger:
@@ -36,14 +40,17 @@ class RPALogger:
 
     def log_info(self, message: str) -> None:
         """Bilgi mesajı yaz."""
+        print(f"{Fore.CYAN}[INFO]{Style.RESET_ALL} {message}")
         self.logger.info(message)
 
     def log_error(self, message: str) -> None:
         """Hata mesajı yaz."""
+        print(f"{Fore.RED}[ERROR]{Style.RESET_ALL} {message}")
         self.logger.error(message)
 
     def log_success(self, row_data: dict[str, str | float], status: str = "BAŞARILI") -> None:
         """İşlem sonucunu kaydet."""
+        print(f"{Fore.GREEN}[SUCCESS]{Style.RESET_ALL} {row_data.get('Açıklama', '')} - {row_data.get('Tutar', '')} TL")
         result = {
             "Zaman": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Tarih": row_data.get("Tarih", ""),

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import threading
 import tkinter as tk
 from tkinter import messagebox
 
@@ -22,6 +23,8 @@ class RPABot:
         self.gui_title = gui_title
         self.reader = DataReader()
         self.logger = RPALogger()
+        self.is_running = False
+        self.current_progress = 0
 
     def _find_gui(self) -> bool:
         """GUI açık mı kontrol et."""
@@ -62,3 +65,17 @@ class RPABot:
             except Exception as exc:  # pragma: no cover - otomasyon hataları
                 self.logger.log_error(str(exc))
         self.logger.save_results()
+
+    def run_automation_threaded(self, gui_callback=None):
+        """RPA'yı ayrı thread'de çalıştırır (GUI donmaması için)."""
+
+        def automation_worker():
+            self.is_running = True
+            self.run()
+            if gui_callback:
+                gui_callback("completed")
+            self.is_running = False
+
+        thread = threading.Thread(target=automation_worker, daemon=True)
+        thread.start()
+        return thread
