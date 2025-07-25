@@ -24,7 +24,6 @@ class AdvancedAccountingGUI:
         style = ttk.Style()
         style.theme_use('clam')
 
-        # Presto'ya benzer mavi tonları
         style.configure('Header.TFrame', background='#2E4BC6')
         style.configure('Toolbar.TFrame', background='#F0F0F0', relief='raised')
         style.configure('Status.TFrame', background='#E0E0E0', relief='sunken')
