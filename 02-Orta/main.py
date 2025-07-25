@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 
-from rpa_bot import RPABot
+from rpa_bot import AdvancedRPABot
 
 
 # Global GUI reference used by the bot
@@ -28,7 +28,8 @@ def start_bot() -> None:
         print("\u274C Önce GUI'yi açın")
         return
 
-    bot = RPABot()
+    bot = AdvancedRPABot()
+    bot.set_gui_reference(gui_app)
     bot.run()
 
 
@@ -40,10 +41,9 @@ def start_bot_threaded() -> threading.Thread | None:
         print("\u274C Önce GUI'yi açın")
         return None
 
-    bot = RPABot()
-    thread = threading.Thread(target=bot.run, daemon=True)
-    thread.start()
-    return thread
+    bot = AdvancedRPABot()
+    bot.set_gui_reference(gui_app)
+    return bot.run()
 
 
 def start_both() -> None:
