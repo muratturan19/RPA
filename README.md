@@ -5,7 +5,7 @@ Bu repo, basitten karmaşığa doğru ilerleyen çeşitli RPA (Robotic Process A
 ## Klasörler
 
 - **01-Basit/**: Orijinal öğrenme projesi. Excel verilerini Tkinter tabanlı arayüze otomatik girer.
-- **02-Orta/**: Presto benzeri gelişmiş GUI. Seçilen Excel dosyasındaki verileri regex ile filtreler. Varsayılan filtre `^POSH.*MUSLUOĞLU$` şeklindedir.
+- **02-Orta/**: Muhasebe Pro tarzı gelişmiş GUI. Çoklu menüler ve araç çubuğu içerir. Excel verilerini yükledikten sonra regex, tutar ve tarih gibi gelişmiş filtrelerle inceleyebilirsiniz.
 - **03-Karmasik/**: Daha ileri senaryolar için boş bırakılmış klasör.
 - **data/**: Excel dosyalarınızı koyabileceğiniz klasör. `01-Basit` ve `02-Orta` betikleri bu klasörün bir üstündeki `../data` yolunu kullanır.
 
