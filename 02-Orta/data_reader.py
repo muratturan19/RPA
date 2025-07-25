@@ -5,7 +5,7 @@ from pathlib import Path
 class DataReader:
     """Excel dosyasini okuyup regex filtresi uygulayan sinif."""
 
-    def __init__(self, file_path: str = "../data/complex_data.xlsx") -> None:
+    def __init__(self, file_path: str = "../Data/Vadesiz_Hesap_Detay.xlsx") -> None:
         self.file_path = file_path
         self.data: pd.DataFrame | None = None
         self.pattern = r'^POSH.*\/\d{15}$'
