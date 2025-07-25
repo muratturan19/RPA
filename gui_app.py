@@ -100,3 +100,7 @@ class BankGUI(tk.Tk):
         if progress is not None:
             self.progress_var.set(progress)
         self.update_idletasks()
+
+    def run(self) -> None:
+        """GUI'yi çalıştırır"""
+        self.mainloop()
