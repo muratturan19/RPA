@@ -12,9 +12,9 @@ class BankGUI(tk.Tk):
     """Banka işlemleri giriş arayüzü."""
 
     # Bekleme süreleri (saniye)
-    WAIT_AFTER_CLICK = 0.5
-    WAIT_AFTER_TYPING = 0.2
-    WAIT_AFTER_SAVE = 1.0
+    WAIT_AFTER_CLICK = 1.0
+    WAIT_AFTER_TYPING = 0.4
+    WAIT_AFTER_SAVE = 2.0
 
     def __init__(self) -> None:
         super().__init__()
@@ -25,6 +25,16 @@ class BankGUI(tk.Tk):
         self.style.theme_use("clam")
 
         self._create_dashboard()
+
+        # Live commentary box
+        self.commentary_var = tk.StringVar(value="[RPA DURUM] Hazır")
+        self.commentary_label = tk.Label(
+            self,
+            textvariable=self.commentary_var,
+            bg="yellow",
+            anchor="w",
+        )
+        self.commentary_label.pack(fill=tk.X, padx=5, pady=2)
 
         # Status bar
         self.status_frame = ttk.Frame(self)
@@ -79,9 +89,18 @@ class BankGUI(tk.Tk):
         self.entry_tutar.grid(row=2, column=1, sticky="ew")
 
         ttk.Label(frame, text="Hesap Kodu").grid(row=3, column=0, sticky="w")
-        self.entry_hesap = ttk.Entry(frame)
-        self.entry_hesap.insert(0, "6232011")
-        self.entry_hesap.grid(row=3, column=1, sticky="ew")
+        self.account_options = [
+            "6232011 - GARANTİ BANKASI",
+            "1001001 - KASA",
+            "1201001 - ALICILAR",
+        ]
+        self.combo_hesap = ttk.Combobox(
+            frame,
+            values=self.account_options,
+            state="readonly",
+        )
+        self.combo_hesap.set(self.account_options[0])
+        self.combo_hesap.grid(row=3, column=1, sticky="ew")
 
         button_frame = ttk.Frame(frame)
         button_frame.grid(row=4, column=0, columnspan=2, pady=5)
@@ -108,7 +127,7 @@ class BankGUI(tk.Tk):
         tarih = self.entry_tarih.get().strip()
         aciklama = self.entry_aciklama.get().strip()
         tutar = self.entry_tutar.get().strip()
-        hesap = self.entry_hesap.get().strip()
+        hesap = self.combo_hesap.get().strip()
 
         if not (tarih and aciklama and tutar):
             messagebox.showerror("Hata", "Tüm alanları doldurun")
@@ -121,14 +140,18 @@ class BankGUI(tk.Tk):
         self.entry_tarih.delete(0, tk.END)
         self.entry_aciklama.delete(0, tk.END)
         self.entry_tutar.delete(0, tk.END)
-        self.entry_hesap.delete(0, tk.END)
-        self.entry_hesap.insert(0, "6232011")
+        self.combo_hesap.set(self.account_options[0])
 
     def update_status(self, message: str, progress: float | None = None) -> None:
         """Status bar'ı günceller."""
         self.status_label.config(text=message)
         if progress is not None:
             self.progress_var.set(progress)
+        self.update_idletasks()
+
+    def update_commentary(self, message: str) -> None:
+        """Live commentary kutusunu günceller."""
+        self.commentary_var.set(f"[RPA DURUM] {message}")
         self.update_idletasks()
 
     def run(self) -> None:
@@ -138,17 +161,24 @@ class BankGUI(tk.Tk):
     # --- RPA integration
     def add_transaction_via_popup(self, row: dict[str, str | float]) -> None:
         """RPA için popup üzerinden kayıt ekler."""
+        self.update_commentary("Banka İşlemleri butonuna tıklıyor...")
         self.open_form()
         time.sleep(self.WAIT_AFTER_CLICK)
 
+        self.update_commentary("Tarih alanına veri giriyor...")
         self.entry_tarih.insert(0, str(row.get("Tarih", "")))
         time.sleep(self.WAIT_AFTER_TYPING)
         self.entry_aciklama.insert(0, str(row.get("Açıklama", "")))
         time.sleep(self.WAIT_AFTER_TYPING)
         self.entry_tutar.insert(0, str(row.get("Tutar", "")))
         time.sleep(self.WAIT_AFTER_TYPING)
-        self.entry_hesap.delete(0, tk.END)
-        self.entry_hesap.insert(0, "6232011")
+
+        self.update_commentary("Hesap kodları menüsünü açıyor...")
+        self.combo_hesap.event_generate("<Button-1>")
+        time.sleep(self.WAIT_AFTER_TYPING)
+
+        self.update_commentary("6232011 GARANTİ BANKASI seçiyor...")
+        self.combo_hesap.set(self.account_options[0])
         time.sleep(self.WAIT_AFTER_TYPING)
 
         self.kaydet()
