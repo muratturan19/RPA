@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
+import threading
 
 
 class BankGUI(tk.Tk):
@@ -19,6 +19,17 @@ class BankGUI(tk.Tk):
         self.style.theme_use("clam")
 
         self._create_widgets()
+
+        # Status bar
+        self.status_frame = ttk.Frame(self)
+        self.status_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.status_label = ttk.Label(self.status_frame, text="Hazır", relief=tk.SUNKEN)
+        self.status_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ttk.Progressbar(self.status_frame, variable=self.progress_var, maximum=100)
+        self.progress_bar.pack(side=tk.RIGHT, padx=5)
 
     def _create_widgets(self) -> None:
         frame = ttk.Frame(self)
@@ -82,3 +93,10 @@ class BankGUI(tk.Tk):
         self.entry_tutar.delete(0, tk.END)
         self.entry_hesap.delete(0, tk.END)
         self.entry_hesap.insert(0, "6232011")
+
+    def update_status(self, message: str, progress: float | None = None) -> None:
+        """Status bar'ı günceller."""
+        self.status_label.config(text=message)
+        if progress is not None:
+            self.progress_var.set(progress)
+        self.update_idletasks()
