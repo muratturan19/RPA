@@ -18,4 +18,4 @@ python create_real_data.py
 python main.py
 ```
 
-`02-Orta/presto_gui.py` dosyasını doğrudan çalıştırarak karmaşık arayüzü deneyebilirsiniz.
+`02-Orta/accounting_gui.py` dosyasını doğrudan çalıştırarak karmaşık arayüzü deneyebilirsiniz.
