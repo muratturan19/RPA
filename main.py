@@ -37,28 +37,38 @@ def start_bot():
         print(f"\u274C RPA Bot hatası: {e}")
 
 
+def start_bot_threaded():
+    """RPA bot'unu ayrı bir thread'de çalıştırır"""
+    global gui_app
+
+    if gui_app is None:
+        print("\u274C GUI penceresi bulunamadı. Önce GUI'yi başlatın (seçenek 1 veya 3).")
+        return
+
+    try:
+        from rpa_bot import RPABot
+
+        bot = RPABot()
+        bot.set_gui_reference(gui_app)
+        bot.run_automation_threaded()
+
+    except Exception as e:
+        print(f"\u274C RPA Bot hatası: {e}")
+
+
 def start_both():
     """Hem GUI hem RPA'yı başlatır"""
     global gui_app
 
     print("\U0001F5A5\ufe0f GUI başlatılıyor...")
 
-    # GUI'yi non-blocking başlat
     from gui_app import BankGUI
     gui_app = BankGUI()
 
-    # GUI'yi ayrı thread'de çalıştır
-    def run_gui():
-        gui_app.mainloop()
+    # GUI açıldıktan sonra RPA'yı ayrı thread'de başlat
+    gui_app.after(100, start_bot_threaded)
 
-    gui_thread = threading.Thread(target=run_gui, daemon=True)
-    gui_thread.start()
-
-    # GUI yüklensin diye kısa bekle
-    time.sleep(2)
-
-    print("\U0001F916 RPA Bot başlatılıyor...")
-    start_bot()
+    gui_app.run()
 
 
 def show_test_data():
