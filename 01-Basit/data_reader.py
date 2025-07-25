@@ -14,7 +14,7 @@ RESET = "\033[0m"
 class DataReader:
     """Excel dosyasını okur ve doğrular."""
 
-    def __init__(self, file_path: str = "data/girdi_verisi.xlsx") -> None:
+    def __init__(self, file_path: str = "../data/girdi_verisi.xlsx") -> None:
         self.file_path = file_path
         self.data: pd.DataFrame | None = None
         # Doğru pattern: POSH ile başlayan ve 15 haneli sayı ile biten

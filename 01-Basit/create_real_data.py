@@ -20,12 +20,12 @@ real_data = [
 df = pd.DataFrame(real_data)
 
 # data klasörünü oluştur
-Path("data").mkdir(exist_ok=True)
+Path("../data").mkdir(exist_ok=True)
 
 # Excel dosyasını kaydet
-df.to_excel("data/girdi_verisi.xlsx", index=False)
+df.to_excel("../data/girdi_verisi.xlsx", index=False)
 
-print("✅ Gerçek müşteri verisi Excel'e kaydedildi: data/girdi_verisi.xlsx")
+print("✅ Gerçek müşteri verisi Excel'e kaydedildi: ../data/girdi_verisi.xlsx")
 print(f"📊 {len(df)} satır gerçek işlem hazırlandı")
 print("\n📋 Veri özeti:")
 print(f"💳 POS Satış: {len(df[df['Tip'] == 'POS Satış'])} adet")
