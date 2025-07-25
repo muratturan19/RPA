@@ -15,7 +15,7 @@ class RPABot:
     """Excel verilerini GUI'ye otomatik giren bot."""
 
     # İşlemler arası bekleme süresi (saniye)
-    WAIT_BETWEEN_OPS = 0.8
+    WAIT_BETWEEN_OPS = 1.6
 
     def __init__(self, gui_title: str = "Menü / Dashboard") -> None:
         self.gui_title = gui_title
