@@ -67,6 +67,6 @@ class RPALogger:
         """Sonuçları Excel'e kaydet."""
         if self.results:
             df = pd.DataFrame(self.results)
-            Path("data").mkdir(exist_ok=True)
-            df.to_excel("data/sonuclar.xlsx", index=False)
+            Path("../data").mkdir(exist_ok=True)
+            df.to_excel("../data/sonuclar.xlsx", index=False)
             self.log_info(f"Sonuçlar kaydedildi: {len(self.results)} işlem")

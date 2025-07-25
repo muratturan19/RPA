@@ -59,7 +59,7 @@ def install_package(package):
 
 def create_directories():
     """Gerekli klasörleri oluşturur"""
-    directories = ["data", "logs"]
+    directories = ["../data", "logs"]
     for dir_name in directories:
         Path(dir_name).mkdir(exist_ok=True)
         print(f"📁 {dir_name} klasörü hazır")
