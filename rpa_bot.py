@@ -14,6 +14,9 @@ from logger import RPALogger
 class RPABot:
     """Excel verilerini GUI'ye otomatik giren bot."""
 
+    # İşlemler arası bekleme süresi (saniye)
+    WAIT_BETWEEN_OPS = 0.8
+
     def __init__(self, gui_title: str = "Menü / Dashboard") -> None:
         self.gui_title = gui_title
         self.reader = DataReader()
@@ -61,8 +64,8 @@ class RPABot:
             self.logger.log_info(f"{idx}. satır işleniyor")
             try:
                 self.gui_window.add_transaction_via_popup(row)
-                time.sleep(0.1)
                 self.logger.log_success(row)
+                time.sleep(self.WAIT_BETWEEN_OPS)
             except Exception as exc:  # pragma: no cover - otomasyon hataları
                 self.logger.log_error(str(exc))
         self.logger.save_results()
