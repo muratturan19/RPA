@@ -5,10 +5,16 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
+import time
 
 
 class BankGUI(tk.Tk):
     """Banka işlemleri giriş arayüzü."""
+
+    # Bekleme süreleri (saniye)
+    WAIT_AFTER_CLICK = 0.5
+    WAIT_AFTER_TYPING = 0.2
+    WAIT_AFTER_SAVE = 1.0
 
     def __init__(self) -> None:
         super().__init__()
@@ -133,10 +139,19 @@ class BankGUI(tk.Tk):
     def add_transaction_via_popup(self, row: dict[str, str | float]) -> None:
         """RPA için popup üzerinden kayıt ekler."""
         self.open_form()
+        time.sleep(self.WAIT_AFTER_CLICK)
+
         self.entry_tarih.insert(0, str(row.get("Tarih", "")))
+        time.sleep(self.WAIT_AFTER_TYPING)
         self.entry_aciklama.insert(0, str(row.get("Açıklama", "")))
+        time.sleep(self.WAIT_AFTER_TYPING)
         self.entry_tutar.insert(0, str(row.get("Tutar", "")))
+        time.sleep(self.WAIT_AFTER_TYPING)
         self.entry_hesap.delete(0, tk.END)
         self.entry_hesap.insert(0, "6232011")
+        time.sleep(self.WAIT_AFTER_TYPING)
+
         self.kaydet()
+        time.sleep(self.WAIT_AFTER_SAVE)
+
         self.update()  # arayüzü güncelle
