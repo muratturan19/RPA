@@ -27,12 +27,30 @@ class RPABot:
         self.current_progress = 0
 
     def _find_gui(self) -> bool:
-        """GUI açık mı kontrol et."""
-        for w in tk._default_root.winfo_children() if tk._default_root else []:
-            if w.title() == self.gui_title:
+        """GUI penceresini bulur"""
+        try:
+            # GUI referansı varsa direkt kullan
+            if hasattr(self, "gui_window") and self.gui_window:
                 return True
-        messagebox.showerror("Hata", "GUI uygulaması bulunamadı")
-        return False
+
+            self.logger.log_error(
+                "GUI referansı bulunamadı. set_gui_reference() çağrılmalı."
+            )
+            return False
+
+        except Exception as e:
+            self.logger.log_error(f"GUI arama hatası: {e}")
+            return False
+
+    def set_gui_reference(self, gui_window):
+        """GUI referansını direkt olarak ayarlar"""
+        self.gui_window = gui_window
+        if hasattr(gui_window, "title"):
+            self.gui_title = gui_window.title()
+        else:
+            self.gui_title = "GUI Penceresi"
+        self.logger.log_info(f"GUI referansı ayarlandı: {self.gui_title}")
+        return True
 
     def run(self) -> None:
         """Botu çalıştır."""
