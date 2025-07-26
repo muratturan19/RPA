@@ -385,17 +385,67 @@ class EnterpriseRPABot:
     def execute_step3_data_preview(self):
         """Adım 3: Veri önizleme - YAVAŞ"""
         print("🔵 Adım 3 başlıyor...")
+
+        # Önizleme için ilk Excel dosyasındaki kayıtları hazırla
+        preview_records = self.prepare_preview_records()
+
+        if self.gui:
+            self.call_in_gui_thread(self.gui.set_current_records, preview_records)
+
         self.call_in_gui_thread(self.gui.step3_preview_data)
         print("🔵 Adım 3 pop-up açıldı, bekleniyor...")
-        proceed = self.call_in_gui_thread(
-            self.gui._ask_yes_no_left,
-            "Devam edilsin mi?",
-            "3. Adım: Veri Önizleme",
-        )
+
+        # Hiç kayıt bulunamadıysa kullanıcıya sor
+        if not preview_records:
+            proceed = self.call_in_gui_thread(
+                self.gui._ask_yes_no_left,
+                "Hiç kayıt bulunamadı. Yine de devam edilsin mi?",
+                "3. Adım: Veri Önizleme",
+            )
+        else:
+            proceed = self.call_in_gui_thread(
+                self.gui._ask_yes_no_left,
+                "Devam edilsin mi?",
+                "3. Adım: Veri Önizleme",
+            )
+
         if not proceed:
             return False
         print("✅ Adım 3 tamamlandı")
         return True
+
+    def prepare_preview_records(self) -> List[Dict]:
+        """İlk Excel dosyasından kayıtları önizleme için hazırla"""
+        if not self.excel_files:
+            self.log_step("⚠️ Önizleme için Excel dosyası bulunamadı", 0.5)
+            return []
+
+        excel_path = self.excel_files[0]
+        try:
+            self.log_step(f"📂 Önizleme dosyası okunuyor: {excel_path.name}", 0.5)
+            raw_data = pd.read_excel(excel_path, header=23)
+            pattern = r'^POSH.*\/\d{15}$'
+            aciklama_cols = [col for col in raw_data.columns if 'açıklama' in str(col).lower()]
+            aciklama_col = aciklama_cols[0] if aciklama_cols else raw_data.columns[2]
+
+            filtered_data = raw_data[raw_data[aciklama_col].astype(str).str.match(pattern, na=False)]
+
+            processed_records = []
+            for _, row in filtered_data.iterrows():
+                record = {
+                    'tarih': str(row.iloc[0]) if len(row) > 0 else datetime.now().strftime('%d.%m.%Y'),
+                    'aciklama': str(row[aciklama_col]) if pd.notna(row[aciklama_col]) else "",
+                    'tutar': str(row.iloc[3]) if len(row) > 3 else "0",
+                    'dosya': excel_path.name
+                }
+                processed_records.append(record)
+
+            self.log_step(f"🔍 Önizleme için {len(processed_records)} kayıt hazırlandı", 0.5)
+            return processed_records
+
+        except Exception as e:
+            self.log_step(f"❌ Önizleme hazırlama hatası: {e}", 0.5)
+            return []
         
     def execute_step4_parameters(self):
         """Adım 4: İşlem parametreleri"""

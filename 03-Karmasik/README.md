@@ -43,3 +43,7 @@ Streamlit paneli üzerinden Excel dosyalarını yükleyip işle başlatabilirsin
 RPA botu her adımın ardından kullanıcıya "Devam edilsin mi?" sorusunu içeren
 bir onay penceresi gösterir. "HAYIR" seçilirse ilgili adım ve kalan süreç
 iptal edilir. Bu sayede uzun işlemleri adım adım kontrol edebilirsiniz.
+
+3. adımda bot ilk Excel dosyasını hızlıca okuyarak önizleme kaydı sayısını
+hesaplar ve bu sayı GUI'de gösterilir. Eğer hiç kayıt bulunmazsa devam edip
+etmeyeceğiniz sorulur.
