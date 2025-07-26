@@ -432,7 +432,11 @@ class EnterpriseGUI:
     def step3_preview_data(self):
         """3. Adım: Veri önizleme"""
         self.update_process_status("\U0001f535 3. Adım: Veri önizlemesi yapılıyor...")
-        messagebox.showinfo("Adım 3", "Veri önizlemesi:\n\n\U0001f4ca 77 kayıt bulundu\n\U0001f50d POSH pattern eşleşmesi\n\U0001f4b0 Tutar aralığı: -13.42 - 4559.47 TL")
+        record_count = len(self.current_records) if self.current_records else 0
+        messagebox.showinfo(
+            "Adım 3",
+            f"Veri önizlemesi:\n\n\U0001f4ca {record_count} kayıt bulundu\n\U0001f50d POSH pattern eşleşmesi\n\U0001f4b0 Tutar aralığı: dinamik",
+        )
         self.update_process_status("\u2705 3. Adım tamamlandı - Parametreleri ayarlayın")
         
     def step4_set_parameters(self):
@@ -450,12 +454,15 @@ class EnterpriseGUI:
         self.update_process_status("\U0001f680 5. Adım: Veri giriş sistemi başlatılıyor...")
         
         # Onay dialog'u
-        result = messagebox.askyesno("\U0001f680 Kritik İşlem", 
-                                   "Veri Giriş Sistemi Başlatılacak!\n\n" +
-                                   "\U0001f4ca 77 kayıt işlenecek\n" +
-                                   "\U0001f916 RPA otomasyonu başlayacak\n" +
-                                   "\u23f1\ufe0f Tahmini süre: 3-5 dakika\n\n" +
-                                   "Başlatmak istediğinizden emin misiniz?")
+        record_count = len(self.current_records) if self.current_records else 0
+        result = messagebox.askyesno(
+            "\U0001f680 Kritik İşlem",
+            "Veri Giriş Sistemi Başlatılacak!\n\n"
+            + f"\U0001f4ca {record_count} kayıt işlenecek\n"
+            + "\U0001f916 RPA otomasyonu başlayacak\n"
+            + "\u23f1\ufe0f Tahmini süre: 3-5 dakika\n\n"
+            + "Başlatmak istediğinizden emin misiniz?",
+        )
         
         if result:
             self.update_process_status("\u2705 5. Adım onaylandı - Veri Giriş Modal'ı açılıyor...")
