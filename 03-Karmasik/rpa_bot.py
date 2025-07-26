@@ -353,37 +353,21 @@ class EnterpriseRPABot:
         self.log_step("✅ FAZ 2 TAMAMLANDI: 6 adımlı süreç bitti", 1.5)
         
     def execute_step1_source_selection(self):
-        """Adım 1: Veri kaynağı seçimi - YAVAŞ"""
+        """Adım 1: Veri kaynağı seçimi - TEMİZ"""
         print("🔵 Adım 1 başlıyor...")
         self.call_in_gui_thread(self.gui.step1_select_source)
-        print("🔵 Adım 1 pop-up açıldı, bekleniyor...")
-        proceed = self.call_in_gui_thread(
-            self.gui._ask_yes_no_left,
-            "Devam edilsin mi?",
-            "1. Adım: Veri Kaynağı Seçimi",
-        )
-        if not proceed:
-            return False
         print("✅ Adım 1 tamamlandı")
         return True
         
     def execute_step2_record_filtering(self):
-        """Adım 2: Kayıt filtreleme - YAVAŞ"""
+        """Adım 2: Kayıt filtreleme - TEMİZ"""
         print("🔵 Adım 2 başlıyor...")
         self.call_in_gui_thread(self.gui.step2_filter_records)
-        print("🔵 Adım 2 pop-up açıldı, bekleniyor...")
-        proceed = self.call_in_gui_thread(
-            self.gui._ask_yes_no_left,
-            "Devam edilsin mi?",
-            "2. Adım: Kayıt Filtreleme",
-        )
-        if not proceed:
-            return False
         print("✅ Adım 2 tamamlandı")
         return True
         
     def execute_step3_data_preview(self):
-        """Adım 3: Veri önizleme - YAVAŞ"""
+        """Adım 3: Veri önizleme - TEMİZ"""
         print("🔵 Adım 3 başlıyor...")
 
         # Önizleme için ilk Excel dosyasındaki kayıtları hazırla
@@ -393,24 +377,6 @@ class EnterpriseRPABot:
             self.call_in_gui_thread(self.gui.set_current_records, preview_records)
 
         self.call_in_gui_thread(self.gui.step3_preview_data)
-        print("🔵 Adım 3 pop-up açıldı, bekleniyor...")
-
-        # Hiç kayıt bulunamadıysa kullanıcıya sor
-        if not preview_records:
-            proceed = self.call_in_gui_thread(
-                self.gui._ask_yes_no_left,
-                "Hiç kayıt bulunamadı. Yine de devam edilsin mi?",
-                "3. Adım: Veri Önizleme",
-            )
-        else:
-            proceed = self.call_in_gui_thread(
-                self.gui._ask_yes_no_left,
-                "Devam edilsin mi?",
-                "3. Adım: Veri Önizleme",
-            )
-
-        if not proceed:
-            return False
         print("✅ Adım 3 tamamlandı")
         return True
 
@@ -448,15 +414,10 @@ class EnterpriseRPABot:
             return []
         
     def execute_step4_parameters(self):
-        """Adım 4: İşlem parametreleri"""
+        """Adım 4: İşlem parametreleri - TEMİZ"""
+        print("🔵 Adım 4 başlıyor...")
         self.call_in_gui_thread(self.gui.step4_set_parameters)
-        proceed = self.call_in_gui_thread(
-            self.gui._ask_yes_no_left,
-            "Devam edilsin mi?",
-            "4. Adım: İşlem Parametreleri",
-        )
-        if not proceed:
-            return False
+        print("✅ Adım 4 tamamlandı")
         return True
         
     def execute_step5_data_entry(self):
@@ -507,15 +468,10 @@ class EnterpriseRPABot:
         return True
         
     def execute_step6_batch_confirm(self):
-        """Adım 6: Toplu onay (işlem sonunda)"""
-        proceed = self.call_in_gui_thread(
-            self.gui._ask_yes_no_left,
-            "Devam edilsin mi?",
-            "6. Adım: Toplu Onay İşlemi",
-        )
-        if not proceed:
-            return False
-        # Bu adım veri işleme bittikten sonra çalışacak
+        """Adım 6: Toplu onay - TEMİZ"""
+        print("🔵 Adım 6 başlıyor...")
+        self.call_in_gui_thread(self.gui.step6_batch_confirm)
+        print("✅ Adım 6 tamamlandı")
         return True
         
     # === PHASE 3: ÇOKLU EXCEL İŞLEME ===
