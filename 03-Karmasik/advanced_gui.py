@@ -417,13 +417,21 @@ class EnterpriseGUI:
     def step1_select_source(self):
         """1. Adım: Veri kaynağı seç"""
         self.update_process_status("\U0001f535 1. Adım: Veri kaynağı belirleniyor...")
-        messagebox.showinfo("Adım 1", "Veri kaynağı seçimi tamamlandı.\n\n\U0001f4c2 Excel dosyaları hazırlandı.")
+        messagebox.showinfo(
+            "Adım 1",
+            "Veri kaynağı seçimi tamamlandı.\n\n\U0001f4c2 Excel dosyaları hazırlandı.",
+            parent=self.data_entry_window,
+        )
         self.update_process_status("\u2705 1. Adım tamamlandı - Filtreleme adımına geçin")
         
     def step2_filter_records(self):
         """2. Adım: Kayıt filtrele"""
         self.update_process_status("\U0001f535 2. Adım: Kayıtlar filtreleniyor...")
-        result = messagebox.askyesno("Adım 2", "POSH pattern filtresi uygulanacak.\n\nDevam edilsin mi?")
+        result = messagebox.askyesno(
+            "Adım 2",
+            "POSH pattern filtresi uygulanacak.\n\nDevam edilsin mi?",
+            parent=self.data_entry_window,
+        )
         if result:
             self.update_process_status("\u2705 2. Adım tamamlandı - Önizleme yapın")
         else:
@@ -436,6 +444,7 @@ class EnterpriseGUI:
         messagebox.showinfo(
             "Adım 3",
             f"Veri önizlemesi:\n\n\U0001f4ca {record_count} kayıt bulundu\n\U0001f50d POSH pattern eşleşmesi\n\U0001f4b0 Tutar aralığı: dinamik",
+            parent=self.data_entry_window,
         )
         self.update_process_status("\u2705 3. Adım tamamlandı - Parametreleri ayarlayın")
         
@@ -462,6 +471,7 @@ class EnterpriseGUI:
             + "\U0001f916 RPA otomasyonu başlayacak\n"
             + "\u23f1\ufe0f Tahmini süre: 3-5 dakika\n\n"
             + "Başlatmak istediğinizden emin misiniz?",
+            parent=self.data_entry_window,
         )
         
         if result:
