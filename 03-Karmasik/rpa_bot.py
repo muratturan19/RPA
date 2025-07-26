@@ -109,6 +109,15 @@ class EnterpriseRPABot:
         except Exception:
             pass
 
+    def after_mouse_click(self):
+        """Mouse tıklamasından sonra modal'ı tekrar öne getir."""
+        if self.gui and getattr(self.gui, 'data_entry_window', None):
+            try:
+                self.gui.data_entry_window.lift()
+                self.gui.data_entry_window.focus_force()
+            except Exception:
+                pass
+
     class _BBoxWidget:
         """Notebook sekmeleri için sanal widget"""
 
@@ -181,6 +190,7 @@ class EnterpriseRPABot:
         # Tıklama gecikmesi
         time.sleep(random.uniform(0.1, 0.3) * self.delay_factor)
         self.log_step(f"✅ {widget_name} başarıyla tıklandı", delay)
+        self.call_in_gui_thread(self.after_mouse_click)
         
     # === PHASE 1: KARMAŞIK GUI NAVİGASYONU ===
     
