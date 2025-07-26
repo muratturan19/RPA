@@ -269,6 +269,8 @@ class AdvancedAccountingGUI:
         self.data_entry_window.geometry(f"500x350+{x_position}+{y_position}")
 
         self.data_entry_window.transient(self.root)
+        self.data_entry_window.attributes('-topmost', True)
+        self.data_entry_window.lift()
         # grab_set() kaldır - Dashboard'ı engellesin
 
         # Modal içeriği

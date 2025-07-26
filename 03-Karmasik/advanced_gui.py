@@ -494,6 +494,8 @@ class EnterpriseGUI:
         self.data_entry_window.geometry(f"600x450+{x_position}+{y_position}")
 
         self.data_entry_window.transient(self.root)
+        self.data_entry_window.attributes('-topmost', True)
+        self.data_entry_window.lift()
         # Modal değil - Dashboard'a erişim olsun
         
         # Modal içeriği
