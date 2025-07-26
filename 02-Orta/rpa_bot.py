@@ -157,6 +157,17 @@ class AdvancedRPABot:
             if not self.load_excel_data():
                 self.log_step("❌ Veri yüklenemedi, işlem durduruluyor", 1)
                 return
+
+            # GUI'ye veriyi ata ve önizleme için göster
+            if self.gui is not None:
+                self.gui.current_records = list(self.excel_data)
+                print(f"DEBUG: GUI data assigned: {len(self.excel_data)} rows")
+                if hasattr(self.gui, "show_data"):
+                    print("DEBUG: Calling gui.show_data()...")
+                    try:
+                        self.gui.show_data()
+                    except Exception as exc:
+                        self.log_step(f"❌ GUI gosterim hatasi: {exc}", 1)
                 
             # 4. Her kayıt için döngü
             total_records = len(self.excel_data)
