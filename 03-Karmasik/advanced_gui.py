@@ -858,24 +858,73 @@ class EnterpriseGUI:
         self.root.update_idletasks()
 
     def _show_info_left(self, title: str, message: str) -> None:
-        """Sol tarafta bilgi kutusu göster"""
-        popup = tk.Toplevel(self.data_entry_window)
+        """DÜZELTME: Sol tarafta bilgi kutusu göster - ONAY BEKLE!"""
+        popup = tk.Toplevel(self.root)
         popup.title(title)
-        ttk.Label(popup, text=message).pack(padx=20, pady=10)
-        ttk.Button(popup, text="Tamam", command=popup.destroy).pack(pady=5)
+        popup.geometry("400x200")
+        popup.configure(bg='#2E3440')
+
+        ttk.Label(
+            popup,
+            text=title,
+            font=('Segoe UI', 14, 'bold'),
+            background='#2E3440',
+            foreground='#89b4fa'
+        ).pack(pady=15)
+        ttk.Label(
+            popup,
+            text=message,
+            font=('Segoe UI', 11),
+            background='#2E3440',
+            foreground='#cdd6f4'
+        ).pack(padx=20, pady=10)
+
+        tamam_btn = tk.Button(
+            popup,
+            text="TAMAM",
+            font=('Segoe UI', 12, 'bold'),
+            bg='#89b4fa',
+            fg='#1e1e2e',
+            width=15,
+            height=2
+        )
+        tamam_btn.pack(pady=15)
+        tamam_btn.configure(command=popup.destroy)
+
         popup.update_idletasks()
-        x = self.data_entry_window.winfo_rootx() - popup.winfo_width() - 10
-        y = self.data_entry_window.winfo_rooty()
-        popup.geometry(f"+{x}+{y}")
-        popup.transient(self.data_entry_window)
+        x = (popup.winfo_screenwidth() // 2) - 200
+        y = (popup.winfo_screenheight() // 2) - 100
+        popup.geometry(f"400x200+{x}+{y}")
+
+        popup.transient(self.root)
         popup.grab_set()
+        popup.focus_set()
+        popup.attributes('-topmost', True)
+
         popup.wait_window()
 
     def _ask_yes_no_left(self, title: str, message: str) -> bool:
-        """Sol tarafta yes/no sor"""
-        popup = tk.Toplevel(self.data_entry_window)
+        """DÜZELTME: Sol tarafta yes/no sor - ONAY BEKLE!"""
+        popup = tk.Toplevel(self.root)
         popup.title(title)
-        ttk.Label(popup, text=message).pack(padx=20, pady=10)
+        popup.geometry("450x250")
+        popup.configure(bg='#2E3440')
+
+        ttk.Label(
+            popup,
+            text=title,
+            font=('Segoe UI', 14, 'bold'),
+            background='#2E3440',
+            foreground='#f9e2af'
+        ).pack(pady=15)
+        ttk.Label(
+            popup,
+            text=message,
+            font=('Segoe UI', 11),
+            background='#2E3440',
+            foreground='#cdd6f4'
+        ).pack(padx=20, pady=10)
+
         result = {"val": False}
 
         def yes():
@@ -883,19 +932,46 @@ class EnterpriseGUI:
             popup.destroy()
 
         def no():
+            result["val"] = False
             popup.destroy()
 
-        btn_frame = ttk.Frame(popup)
-        btn_frame.pack(pady=5)
-        ttk.Button(btn_frame, text="Evet", command=yes).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Hayır", command=no).pack(side="left", padx=5)
+        btn_frame = tk.Frame(popup, bg='#2E3440')
+        btn_frame.pack(pady=20)
+        evet_btn = tk.Button(
+            btn_frame,
+            text="EVET",
+            font=('Segoe UI', 12, 'bold'),
+            bg='#a6e3a1',
+            fg='#1e1e2e',
+            width=12,
+            height=2,
+            command=yes
+        )
+        evet_btn.pack(side="left", padx=10)
+        hayir_btn = tk.Button(
+            btn_frame,
+            text="HAYIR",
+            font=('Segoe UI', 12, 'bold'),
+            bg='#f38ba8',
+            fg='#1e1e2e',
+            width=12,
+            height=2,
+            command=no
+        )
+        hayir_btn.pack(side="left", padx=10)
+
         popup.update_idletasks()
-        x = self.data_entry_window.winfo_rootx() - popup.winfo_width() - 10
-        y = self.data_entry_window.winfo_rooty()
-        popup.geometry(f"+{x}+{y}")
-        popup.transient(self.data_entry_window)
+        x = (popup.winfo_screenwidth() // 2) - 225
+        y = (popup.winfo_screenheight() // 2) - 125
+        popup.geometry(f"450x250+{x}+{y}")
+
+        popup.transient(self.root)
         popup.grab_set()
+        popup.focus_set()
+        popup.attributes('-topmost', True)
+
         popup.wait_window()
+
         return result["val"]
         
     # === EVENT HANDLERs ===
