@@ -23,15 +23,45 @@ class AdvancedAccountingGUI:
         self.create_dashboard()
         
     def setup_styles(self):
-        """Profesyonel stil ayarları"""
+        """Profesyonel ve renkli stil"""
         style = ttk.Style()
         style.theme_use('clam')
-        
-        # Presto benzeri renkler
-        style.configure('Tab.TNotebook', tabposition='n')
-        style.configure('Tab.TNotebook.Tab', padding=[20, 10])
-        style.configure('Toolbar.TFrame', background='#F0F0F0', relief='raised')
-        style.configure('Dashboard.TFrame', background='#FFFFFF')
+
+        # Modern mavi-yeşil tema
+        style.configure('Tab.TNotebook', tabposition='n', background='#2E3440')
+        style.configure('Tab.TNotebook.Tab',
+                       padding=[15, 8],
+                       background='#4C566A',
+                       foreground='white',
+                       focuscolor='none')
+        style.map('Tab.TNotebook.Tab',
+                  background=[('selected', '#5E81AC')],
+                  foreground=[('selected', 'white')])
+
+        # Toolbar stili
+        style.configure('Toolbar.TFrame',
+                       background='#ECEFF4',
+                       relief='flat')
+
+        # Dashboard kartları
+        style.configure('Card.TLabelframe',
+                       background='#ECEFF4',
+                       foreground='#2E3440',
+                       borderwidth=2,
+                       relief='solid')
+        style.configure('Card.TLabelframe.Label',
+                       background='#ECEFF4',
+                       foreground='#2E3440',
+                       font=('Arial', 10, 'bold'))
+
+        # Butonlar
+        style.configure('Action.TButton',
+                       background='#5E81AC',
+                       foreground='white',
+                       borderwidth=0,
+                       focuscolor='none')
+        style.map('Action.TButton',
+                  background=[('active', '#81A1C1')])
         
     def create_dashboard(self):
         """Ana dashboard ekranı"""
@@ -110,7 +140,8 @@ class AdvancedAccountingGUI:
         info_frame.pack(fill='x', pady=20, padx=20)
         
         # Kart 1: Toplam İşlemler
-        card1 = ttk.LabelFrame(info_frame, text="Toplam İşlemler", padding=20)
+        card1 = ttk.LabelFrame(info_frame, text="Toplam İşlemler", 
+                               padding=20, style='Card.TLabelframe')
         card1.pack(side='left', fill='both', expand=True, padx=10)
         
         self.total_transactions_label = ttk.Label(card1, text="0", 
@@ -118,7 +149,8 @@ class AdvancedAccountingGUI:
         self.total_transactions_label.pack()
         
         # Kart 2: Bugünkü İşlemler  
-        card2 = ttk.LabelFrame(info_frame, text="Bugünkü İşlemler", padding=20)
+        card2 = ttk.LabelFrame(info_frame, text="Bugünkü İşlemler", 
+                               padding=20, style='Card.TLabelframe')
         card2.pack(side='left', fill='both', expand=True, padx=10)
         
         self.today_transactions_label = ttk.Label(card2, text="0", 
@@ -222,70 +254,72 @@ class AdvancedAccountingGUI:
         messagebox.showinfo("Bilgi", "Yeni kayıt özelliği henüz geliştirilmemiş.")
         
     def open_data_entry(self):
-        """Veri Giriş modal'ını aç - ANA FONKSİYON!"""
+        """Veri Giriş modal'ını aç - SAĞ TARAFA KONUMLA"""
         self.update_status("Veri Giriş penceresi açılıyor...")
-        
+
         # Modal pencere oluştur
         self.data_entry_window = tk.Toplevel(self.root)
         self.data_entry_window.title("📊 Veri Giriş Sistemi")
-        self.data_entry_window.geometry("600x400")
+        self.data_entry_window.geometry("500x350")
+
+        # Sağ tarafa konumla
+        screen_width = self.root.winfo_screenwidth()
+        x_position = screen_width - 520
+        y_position = 100
+        self.data_entry_window.geometry(f"500x350+{x_position}+{y_position}")
+
         self.data_entry_window.transient(self.root)
-        self.data_entry_window.grab_set()
-        
+        # grab_set() kaldır - Dashboard'ı engellesin
+
         # Modal içeriği
         self.create_data_entry_modal()
         
     def create_data_entry_modal(self):
-        """Veri giriş modal içeriği"""
+        """Modal içeriği - KÜÇÜK VE KOMPAKT"""
         modal = self.data_entry_window
-        
-        # Başlık
+
+        # Başlık - daha küçük
         title_frame = ttk.Frame(modal)
-        title_frame.pack(fill='x', pady=10, padx=20)
-        
-        ttk.Label(title_frame, text="📊 Veri Giriş Formu", 
-                 font=('Arial', 14, 'bold')).pack()
-        
-        # Form alanları
-        form_frame = ttk.LabelFrame(modal, text="İşlem Bilgileri", padding=20)
-        form_frame.pack(fill='x', pady=20, padx=20)
-        
-        # Tarih
-        ttk.Label(form_frame, text="📅 Tarih:").grid(row=0, column=0, sticky='w', pady=5)
-        self.date_entry = ttk.Entry(form_frame, width=30, font=('Arial', 11))
-        self.date_entry.grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
-        
-        # Açıklama
-        ttk.Label(form_frame, text="📝 Açıklama:").grid(row=1, column=0, sticky='w', pady=5)
-        self.desc_entry = ttk.Entry(form_frame, width=30, font=('Arial', 11))
-        self.desc_entry.grid(row=1, column=1, sticky='ew', pady=5, padx=(10, 0))
-        
-        # Tutar
-        ttk.Label(form_frame, text="💰 Tutar:").grid(row=2, column=0, sticky='w', pady=5)
-        self.amount_entry = ttk.Entry(form_frame, width=30, font=('Arial', 11))
-        self.amount_entry.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
-        
+        title_frame.pack(fill='x', pady=5, padx=10)
+
+        ttk.Label(title_frame, text="📊 Veri Giriş",
+                 font=('Arial', 12, 'bold')).pack()
+
+        # Form - kompakt
+        form_frame = ttk.LabelFrame(modal, text="İşlem", padding=10)
+        form_frame.pack(fill='x', pady=5, padx=10)
+
+        # Alanlar - daha küçük
+        ttk.Label(form_frame, text="📅").grid(row=0, column=0, sticky='w')
+        self.date_entry = ttk.Entry(form_frame, width=20, font=('Arial', 9))
+        self.date_entry.grid(row=0, column=1, sticky='ew', padx=5)
+
+        ttk.Label(form_frame, text="📝").grid(row=1, column=0, sticky='w')
+        self.desc_entry = ttk.Entry(form_frame, width=20, font=('Arial', 9))
+        self.desc_entry.grid(row=1, column=1, sticky='ew', padx=5)
+
+        ttk.Label(form_frame, text="💰").grid(row=2, column=0, sticky='w')
+        self.amount_entry = ttk.Entry(form_frame, width=20, font=('Arial', 9))
+        self.amount_entry.grid(row=2, column=1, sticky='ew', padx=5)
+
         form_frame.columnconfigure(1, weight=1)
-        
-        # Butonlar
+
+        # Butonlar - küçük
         button_frame = ttk.Frame(modal)
-        button_frame.pack(fill='x', pady=20, padx=20)
-        
-        self.save_btn = ttk.Button(button_frame, text="💾 Kaydet", 
-                                  command=self.save_current_record, width=15)
-        self.save_btn.pack(side='left', padx=5)
-        
-        self.clear_btn = ttk.Button(button_frame, text="🧹 Temizle", 
-                                   command=self.clear_form, width=15)
-        self.clear_btn.pack(side='left', padx=5)
-        
-        ttk.Button(button_frame, text="❌ Kapat", 
-                  command=modal.destroy, width=15).pack(side='right', padx=5)
-        
-        # Durum
-        self.modal_status = ttk.Label(modal, text="Form hazır - veri girişi bekleniyor...", 
-                                     font=('Arial', 9), foreground='blue')
-        self.modal_status.pack(pady=10)
+        button_frame.pack(fill='x', pady=5, padx=10)
+
+        self.save_btn = ttk.Button(button_frame, text="💾", command=self.save_current_record,
+                                  style='Action.TButton', width=8)
+        self.save_btn.pack(side='left', padx=2)
+
+        self.clear_btn = ttk.Button(button_frame, text="🧹", command=self.clear_form,
+                                   style='Action.TButton', width=8)
+        self.clear_btn.pack(side='left', padx=2)
+
+        # Durum - küçük
+        self.modal_status = ttk.Label(modal, text="Hazır",
+                                     font=('Arial', 8), foreground='blue')
+        self.modal_status.pack(pady=5)
         
     def save_current_record(self):
         """Mevcut kaydı kaydet"""
@@ -326,7 +360,16 @@ class AdvancedAccountingGUI:
         
         # Dashboard'u güncelle
         self.update_dashboard_stats()
-        
+
+        # Tablo en alta scroll et (yeni kayıt görünsün)
+        children = self.main_tree.get_children()
+        if children:
+            self.main_tree.see(children[-1])
+
+        # Dashboard'ı highlight et (0.5 saniye)
+        self.total_transactions_label.config(foreground='#A3BE8C')
+        self.root.after(500, lambda: self.total_transactions_label.config(foreground='black'))
+
         # Form temizle
         self.clear_form()
         
