@@ -318,23 +318,55 @@ class AdvancedAccountingGUI:
         self.update_status("Filtreler temizlendi")
 
     def show_data(self, df):
-        """Veriyi tabloda göster"""
+        """Veriyi tabloda göster - debug ve düzeltme ile"""
+        print(f"SHOW_DATA DEBUG: DataFrame shape: {df.shape}")
+        print(f"SHOW_DATA DEBUG: DF Columns: {list(df.columns)}")
+        print(f"SHOW_DATA DEBUG: Tree columns: {self.tree['columns']}")
+
         # Mevcut verileri temizle
         for item in self.tree.get_children():
             self.tree.delete(item)
 
         if df.empty:
+            print("SHOW_DATA DEBUG: DataFrame is empty")
             return
 
-        # Verileri tabloya ekle
-        for index, row in df.iterrows():
+        # NaN değerleri temizle
+        df_clean = df.fillna('')
+
+        # Verileri tabloya ekle - sütun uyumunu düzelt
+        for index, row in df_clean.iterrows():
             values = []
-            for col in self.tree['columns']:
-                if col in df.columns:
-                    values.append(str(row[col]))
-                else:
-                    values.append('')
+
+            # Excel sütunlarını GUI sütunlarına map et
+            gui_columns = self.tree['columns']
+
+            # Excel'deki ilk 3 sütunu kullan
+            if len(df_clean.columns) >= 3:
+                values.append(str(row.iloc[0]))  # Tarih
+                values.append('')  # Seri
+                values.append('')  # No
+                values.append('')  # Referans
+                values.append('')  # Kasa/Hesap
+                values.append('')  # Kasa/Hesap Kodu
+                values.append('')  # Hesap Adı
+                values.append('')  # Borç Tutarı
+                values.append('')  # Alacak Tutarı
+                values.append('')  # Döviz Türü
+                values.append(str(row.iloc[2]) if len(df_clean.columns) > 2 else '')  # Açıklama
+                values.append('')  # Yevmiye No
+                values.append('')  # Vade Tarihi
+                values.append(str(row.iloc[3]) if len(df_clean.columns) > 3 else '')  # Özel Kod (Tutar)
+
+            # 14 sütuna tamamla
+            while len(values) < len(gui_columns):
+                values.append('')
+
+            print(f"SHOW_DATA DEBUG: Inserting row {index}: {values[:3]}...")
             self.tree.insert('', 'end', values=values)
+
+        tree_children = self.gui.tree.get_children()
+        print(f"SHOW_DATA DEBUG: Final tree children: {len(tree_children)}")
 
     def update_summary(self):
         """Özet bilgileri güncelle"""
