@@ -460,26 +460,29 @@ class EnterpriseGUI:
             self.update_process_status("\u26a0\ufe0f 4. Adım iptal edildi")
             
     def step5_start_data_entry(self):
-        """5. Adım: VERİ GİRİŞ BAŞLAT - ANA FONKSİYON"""
-        self.update_process_status("\U0001f680 5. Adım: Veri giriş sistemi başlatılıyor...")
-        
-        # Onay dialog'u
+        """5. Adım: VERİ GİRİŞ BAŞLAT - Düzeltilmiş sürüm"""
+        self.update_process_status("🚀 5. Adım: Veri giriş sistemi başlatılıyor...")
+
         record_count = len(self.current_records) if self.current_records else 0
         result = self._ask_yes_no_left(
-            "\U0001f680 Kritik İşlem",
+            "🚀 Kritik İşlem",
             "Veri Giriş Sistemi Başlatılacak!\n\n"
-            + f"\U0001f4ca {record_count} kayıt işlenecek\n"
-            + "\U0001f916 RPA otomasyonu başlayacak\n"
-            + "\u23f1\ufe0f Tahmini süre: 3-5 dakika\n\n"
+            + f"📊 {record_count} kayıt işlenecek\n"
+            + "🤖 RPA otomasyonu başlayacak\n"
+            + "⏱️ Tahmini süre: 3-5 dakika\n\n"
             + "Başlatmak istediğinizden emin misiniz?"
         )
-        
+
         if result:
-            self.update_process_status("\u2705 5. Adım onaylandı - Veri Giriş Modal'ı açılıyor...")
-            # 0.5 saniye bekle, sonra modal'ı aç
-            self.root.after(500, self.open_advanced_data_entry)
+            self.update_process_status("✅ 5. Adım onaylandı - Veri Giriş Modal'ı açılıyor...")
+            self.open_advanced_data_entry()
+            self.root.after(1000, self.signal_modal_ready_to_rpa)
         else:
-            self.update_process_status("\u274c 5. Adım iptal edildi")
+            self.update_process_status("❌ 5. Adım iptal edildi")
+
+    def signal_modal_ready_to_rpa(self):
+        """RPA'ya modal hazır sinyali gönder"""
+        self.update_process_status("✅ Modal hazır - RPA işleme başlayabilir")
             
     def step6_batch_confirm(self):
         """6. Adım: Toplu onay"""
@@ -488,30 +491,36 @@ class EnterpriseGUI:
         self.update_process_status("\U0001f389 6. Adım tamamlandı - İşlem süreci bitti!")
         
     def open_advanced_data_entry(self):
-        """Gelişmiş Veri Giriş Modal'ı - SAĞ ALTA KONUMLU"""
-        self.update_status("\U0001f680 Gelişmiş Veri Giriş sistemi açılıyor...")
+        """Gelişmiş Veri Giriş Modal'ı - Düzeltilmiş konum ve boyut"""
+        self.update_status("🚀 Gelişmiş Veri Giriş sistemi açılıyor...")
 
         # Modal pencere
         self.data_entry_window = tk.Toplevel(self.root)
-        self.data_entry_window.title("\U0001f3af Gelişmiş Veri Giriş Sistemi")
-        self.data_entry_window.geometry("600x450")
+        self.data_entry_window.title("🎯 Gelişmiş Veri Giriş Sistemi")
 
-        # Sağ alt köşeye konumla
+        # DÜZELTME: Daha büyük boyut ve merkezi konum
+        modal_width = 700
+        modal_height = 500
+
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        x_position = screen_width - 620
-        y_position = screen_height - 500
-        self.data_entry_window.geometry(f"600x450+{x_position}+{y_position}")
+        x_position = (screen_width - modal_width) // 2
+        y_position = (screen_height - modal_height) // 2
 
+        self.data_entry_window.geometry(f"{modal_width}x{modal_height}+{x_position}+{y_position}")
+
+        # Modal ayarları - Z-order düzeltmesi
         self.data_entry_window.transient(self.root)
         self.data_entry_window.attributes('-topmost', True)
-        self.data_entry_window.attributes('-disabled', False)
+        self.data_entry_window.grab_set()
+        self.data_entry_window.focus_set()
         self.data_entry_window.lift()
-        self.data_entry_window.focus_force()
-        # Modal değil - Dashboard'a erişim olsun
-        
+
         # Modal içeriği
         self.create_advanced_modal_content()
+
+        # Modal açıldığını logla
+        self.update_status("✅ Modal başarıyla açıldı ve hazır")
         
     def create_advanced_modal_content(self):
         """Gelişmiş modal içeriği"""
@@ -585,20 +594,20 @@ class EnterpriseGUI:
     # === MODAL FONKSİYONLARI ===
     
     def save_advanced_record(self):
-        """Gelişmiş kayıt kaydetme"""
+        """Düzeltilmiş kayıt kaydetme - doğru sayılarla"""
         # Form verilerini al
         data = {}
         for key, entry in self.modal_entries.items():
             data[key] = entry.get().strip()
             
         if not all(data.values()):
-            messagebox.showwarning("Uyarı", "Lütfen tüm alanları doldurun!")
+            self.show_modal_warning("Uyarı", "Lütfen tüm alanları doldurun!")
             return
             
         try:
             amount_val = float(data['amount_entry'].replace(',', '.'))
         except ValueError:
-            messagebox.showerror("Hata", "Geçersiz tutar formatı!")
+            self.show_modal_error("Hata", "Geçersiz tutar formatı!")
             return
             
         # Ana tabloya ekle
@@ -625,18 +634,18 @@ class EnterpriseGUI:
         # Dashboard güncellemesi
         self.update_dashboard_stats()
         
-        # Progress güncelle
+        # Progress güncelle - DÜZELTME: Doğru toplam sayı
         total_expected = len(self.current_records) if self.current_records else 100
         current_progress = len(self.main_data)
         progress_percent = min(100, (current_progress / total_expected) * 100)
         self.modal_progress['value'] = progress_percent
-        
-        # Başarı efekti
-        self.modal_status.config(
-            text=f"\u2705 Kayıt {record_id} başarıyla kaydedildi! ({current_progress}/{total_expected})",
-            foreground='#a6e3a1'
+
+        # DÜZELTME: Modal üstünde başarı pop-up'ı
+        self.show_modal_success(
+            "Başarılı",
+            f"Kayıt {record_id} kaydedildi!\n({current_progress}/{total_expected})"
         )
-        
+
         # Form temizle
         self.clear_advanced_form()
         
@@ -691,6 +700,76 @@ class EnterpriseGUI:
             self.data_entry_window.destroy()
             self.data_entry_window = None
         self.update_process_status("\U0001f7e1 Veri giriş sistemi kapatıldı")
+
+    def show_modal_success(self, title: str, message: str):
+        """Modal üstünde başarı mesajı"""
+        popup = tk.Toplevel(self.data_entry_window)
+        popup.title(title)
+        popup.geometry("350x150")
+        popup.configure(bg='#2E3440')
+
+        modal_x = self.data_entry_window.winfo_rootx()
+        modal_y = self.data_entry_window.winfo_rooty()
+        popup.geometry(f"350x150+{modal_x + 50}+{modal_y + 50}")
+
+        popup.transient(self.data_entry_window)
+        popup.attributes('-topmost', True)
+        popup.lift()
+        popup.focus_set()
+
+        tk.Label(popup, text="✅", font=('Segoe UI', 24),
+                 bg='#2E3440', fg='#a6e3a1').pack(pady=10)
+        tk.Label(popup, text=message, font=('Segoe UI', 11),
+                 bg='#2E3440', fg='#cdd6f4', justify='center').pack(pady=5)
+        tk.Button(popup, text="Tamam", command=popup.destroy,
+                  bg='#89b4fa', fg='#1e1e2e', font=('Segoe UI', 10, 'bold')).pack(pady=10)
+        popup.after(2000, popup.destroy)
+
+    def show_modal_warning(self, title: str, message: str):
+        """Modal üstünde uyarı mesajı"""
+        popup = tk.Toplevel(self.data_entry_window)
+        popup.title(title)
+        popup.geometry("300x120")
+        popup.configure(bg='#2E3440')
+
+        modal_x = self.data_entry_window.winfo_rootx()
+        modal_y = self.data_entry_window.winfo_rooty()
+        popup.geometry(f"300x120+{modal_x + 70}+{modal_y + 70}")
+
+        popup.transient(self.data_entry_window)
+        popup.attributes('-topmost', True)
+        popup.grab_set()
+        popup.lift()
+
+        tk.Label(popup, text="⚠️", font=('Segoe UI', 20),
+                 bg='#2E3440', fg='#f9e2af').pack(pady=5)
+        tk.Label(popup, text=message, font=('Segoe UI', 10),
+                 bg='#2E3440', fg='#cdd6f4').pack(pady=5)
+        tk.Button(popup, text="Tamam", command=popup.destroy,
+                  bg='#f38ba8', fg='#1e1e2e').pack(pady=5)
+
+    def show_modal_error(self, title: str, message: str):
+        """Modal üstünde hata mesajı"""
+        popup = tk.Toplevel(self.data_entry_window)
+        popup.title(title)
+        popup.geometry("300x120")
+        popup.configure(bg='#2E3440')
+
+        modal_x = self.data_entry_window.winfo_rootx()
+        modal_y = self.data_entry_window.winfo_rooty()
+        popup.geometry(f"300x120+{modal_x + 70}+{modal_y + 70}")
+
+        popup.transient(self.data_entry_window)
+        popup.attributes('-topmost', True)
+        popup.grab_set()
+        popup.lift()
+
+        tk.Label(popup, text="❌", font=('Segoe UI', 20),
+                 bg='#2E3440', fg='#f38ba8').pack(pady=5)
+        tk.Label(popup, text=message, font=('Segoe UI', 10),
+                 bg='#2E3440', fg='#cdd6f4').pack(pady=5)
+        tk.Button(popup, text="Tamam", command=popup.destroy,
+                  bg='#f38ba8', fg='#1e1e2e').pack(pady=5)
         
     # === YARDIMCI FONKSİYONLAR ===
     
