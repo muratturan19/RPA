@@ -144,6 +144,7 @@ class EnterpriseRPABot:
         if not self.gui or not hasattr(self.gui, "notebook"):
             return None
         try:
+            self.gui.notebook.update_idletasks()
             bbox = self.gui.notebook.bbox(index)
             if not bbox:
                 return None
@@ -151,7 +152,8 @@ class EnterpriseRPABot:
             rootx = self.gui.notebook.winfo_rootx() + x
             rooty = self.gui.notebook.winfo_rooty() + y
             return self._BBoxWidget(rootx, rooty, w, h)
-        except Exception:
+        except Exception as exc:
+            print(f"get_tab_widget error: {exc}")
             return None
         
     def move_mouse_to_widget(self, widget, smooth: bool = True):

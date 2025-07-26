@@ -417,20 +417,18 @@ class EnterpriseGUI:
     def step1_select_source(self):
         """1. Adım: Veri kaynağı seç"""
         self.update_process_status("\U0001f535 1. Adım: Veri kaynağı belirleniyor...")
-        messagebox.showinfo(
+        self._show_info_left(
             "Adım 1",
-            "Veri kaynağı seçimi tamamlandı.\n\n\U0001f4c2 Excel dosyaları hazırlandı.",
-            parent=self.data_entry_window,
+            "Veri kaynağı seçimi tamamlandı.\n\n\U0001f4c2 Excel dosyaları hazırlandı."
         )
         self.update_process_status("\u2705 1. Adım tamamlandı - Filtreleme adımına geçin")
         
     def step2_filter_records(self):
         """2. Adım: Kayıt filtrele"""
         self.update_process_status("\U0001f535 2. Adım: Kayıtlar filtreleniyor...")
-        result = messagebox.askyesno(
+        result = self._ask_yes_no_left(
             "Adım 2",
-            "POSH pattern filtresi uygulanacak.\n\nDevam edilsin mi?",
-            parent=self.data_entry_window,
+            "POSH pattern filtresi uygulanacak.\n\nDevam edilsin mi?"
         )
         if result:
             self.update_process_status("\u2705 2. Adım tamamlandı - Önizleme yapın")
@@ -441,18 +439,21 @@ class EnterpriseGUI:
         """3. Adım: Veri önizleme"""
         self.update_process_status("\U0001f535 3. Adım: Veri önizlemesi yapılıyor...")
         record_count = len(self.current_records) if self.current_records else 0
-        messagebox.showinfo(
+        self._show_info_left(
             "Adım 3",
-            f"Veri önizlemesi:\n\n\U0001f4ca {record_count} kayıt bulundu\n\U0001f50d POSH pattern eşleşmesi\n\U0001f4b0 Tutar aralığı: dinamik",
-            parent=self.data_entry_window,
+            f"Veri önizlemesi:\n\n\U0001f4ca {record_count} kayıt bulundu\n\U0001f50d POSH pattern eşleşmesi\n\U0001f4b0 Tutar aralığı: dinamik"
         )
         self.update_process_status("\u2705 3. Adım tamamlandı - Parametreleri ayarlayın")
         
     def step4_set_parameters(self):
         """4. Adım: İşlem parametreleri"""
         self.update_process_status("\U0001f535 4. Adım: İşlem parametreleri ayarlanıyor...")
-        params = simpledialog.askstring("Adım 4", "İşlem parametrelerini girin\n(varsayılan: hızlı-mod)", 
-                                       initialvalue="hızlı-mod")
+        params = simpledialog.askstring(
+            "Adım 4",
+            "İşlem parametrelerini girin\n(varsayılan: hızlı-mod)",
+            initialvalue="hızlı-mod",
+            parent=self.data_entry_window,
+        )
         if params:
             self.update_process_status("\u2705 4. Adım tamamlandı - Veri girişi başlatabilirsiniz")
         else:
@@ -464,14 +465,13 @@ class EnterpriseGUI:
         
         # Onay dialog'u
         record_count = len(self.current_records) if self.current_records else 0
-        result = messagebox.askyesno(
+        result = self._ask_yes_no_left(
             "\U0001f680 Kritik İşlem",
             "Veri Giriş Sistemi Başlatılacak!\n\n"
             + f"\U0001f4ca {record_count} kayıt işlenecek\n"
             + "\U0001f916 RPA otomasyonu başlayacak\n"
             + "\u23f1\ufe0f Tahmini süre: 3-5 dakika\n\n"
-            + "Başlatmak istediğinizden emin misiniz?",
-            parent=self.data_entry_window,
+            + "Başlatmak istediğinizden emin misiniz?"
         )
         
         if result:
@@ -484,7 +484,7 @@ class EnterpriseGUI:
     def step6_batch_confirm(self):
         """6. Adım: Toplu onay"""
         self.update_process_status("\U0001f535 6. Adım: Toplu onay işlemi...")
-        messagebox.showinfo("Adım 6", "Tüm kayıtlar onaylandı ve sisteme kaydedildi!")
+        self._show_info_left("Adım 6", "Tüm kayıtlar onaylandı ve sisteme kaydedildi!")
         self.update_process_status("\U0001f389 6. Adım tamamlandı - İşlem süreci bitti!")
         
     def open_advanced_data_entry(self):
@@ -715,6 +715,47 @@ class EnterpriseGUI:
         """Ana durum çubuğunu güncelle"""
         self.status_label.config(text=f"\U0001f503 {message}")
         self.root.update_idletasks()
+
+    def _show_info_left(self, title: str, message: str) -> None:
+        """Sol tarafta bilgi kutusu göster"""
+        popup = tk.Toplevel(self.data_entry_window)
+        popup.title(title)
+        ttk.Label(popup, text=message).pack(padx=20, pady=10)
+        ttk.Button(popup, text="Tamam", command=popup.destroy).pack(pady=5)
+        popup.update_idletasks()
+        x = self.data_entry_window.winfo_rootx() - popup.winfo_width() - 10
+        y = self.data_entry_window.winfo_rooty()
+        popup.geometry(f"+{x}+{y}")
+        popup.transient(self.data_entry_window)
+        popup.grab_set()
+        popup.wait_window()
+
+    def _ask_yes_no_left(self, title: str, message: str) -> bool:
+        """Sol tarafta yes/no sor"""
+        popup = tk.Toplevel(self.data_entry_window)
+        popup.title(title)
+        ttk.Label(popup, text=message).pack(padx=20, pady=10)
+        result = {"val": False}
+
+        def yes():
+            result["val"] = True
+            popup.destroy()
+
+        def no():
+            popup.destroy()
+
+        btn_frame = ttk.Frame(popup)
+        btn_frame.pack(pady=5)
+        ttk.Button(btn_frame, text="Evet", command=yes).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Hayır", command=no).pack(side="left", padx=5)
+        popup.update_idletasks()
+        x = self.data_entry_window.winfo_rootx() - popup.winfo_width() - 10
+        y = self.data_entry_window.winfo_rooty()
+        popup.geometry(f"+{x}+{y}")
+        popup.transient(self.data_entry_window)
+        popup.grab_set()
+        popup.wait_window()
+        return result["val"]
         
     # === EVENT HANDLERs ===
     
