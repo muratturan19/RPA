@@ -270,7 +270,9 @@ class AdvancedAccountingGUI:
 
         self.data_entry_window.transient(self.root)
         self.data_entry_window.attributes('-topmost', True)
+        self.data_entry_window.attributes('-disabled', False)
         self.data_entry_window.lift()
+        self.data_entry_window.focus_force()
         # grab_set() kaldır - Dashboard'ı engellesin
 
         # Modal içeriği
