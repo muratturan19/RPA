@@ -349,16 +349,28 @@ class EnterpriseRPABot:
         self.log_step("✅ FAZ 2 TAMAMLANDI: 6 adımlı süreç bitti", 1.5)
         
     def execute_step1_source_selection(self):
-        """Adım 1: Veri kaynağı seçimi"""
+        """Adım 1: Veri kaynağı seçimi - YAVAŞ"""
+        print("🔵 Adım 1 başlıyor...")
         self.call_in_gui_thread(self.gui.step1_select_source)
+        print("🔵 Adım 1 pop-up açıldı, bekleniyor...")
+        time.sleep(2)
+        print("✅ Adım 1 tamamlandı")
         
     def execute_step2_record_filtering(self):
-        """Adım 2: Kayıt filtreleme"""
+        """Adım 2: Kayıt filtreleme - YAVAŞ"""
+        print("🔵 Adım 2 başlıyor...")
         self.call_in_gui_thread(self.gui.step2_filter_records)
+        print("🔵 Adım 2 pop-up açıldı, bekleniyor...")
+        time.sleep(3)
+        print("✅ Adım 2 tamamlandı")
         
     def execute_step3_data_preview(self):
-        """Adım 3: Veri önizleme"""
+        """Adım 3: Veri önizleme - YAVAŞ"""
+        print("🔵 Adım 3 başlıyor...")
         self.call_in_gui_thread(self.gui.step3_preview_data)
+        print("🔵 Adım 3 pop-up açıldı, bekleniyor...")
+        time.sleep(2)
+        print("✅ Adım 3 tamamlandı")
         
     def execute_step4_parameters(self):
         """Adım 4: İşlem parametreleri"""
