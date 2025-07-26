@@ -19,7 +19,7 @@ class AdvancedRPABot:
         self.gui = gui_app
         print("✅ GUI referansı ayarlandı")
         
-    def log_step(self, message, delay=1):
+    def log_step(self, message, delay=0.5):
         """Adımları logla ve bekle"""
         print(f"[RPA] {message}")
         if self.gui:
@@ -41,9 +41,9 @@ class AdvancedRPABot:
         self.gui.root.after(0, wrapper)
         done.wait()
         
-    def click_simulation(self, widget_name, delay=1):
+    def click_simulation(self, widget_name, delay=0.5):
         """Widget tıklama simülasyonu"""
-        self.log_step(f"🖱️ {widget_name} tıklanıyor...", 0.5)
+        self.log_step(f"🖱️ {widget_name} tıklanıyor...", 0.25)
 
         widget = None
         if self.gui:
@@ -60,36 +60,36 @@ class AdvancedRPABot:
             self.call_in_gui_thread(self.move_mouse_to_widget, widget)
 
         time.sleep(delay)
-        self.log_step(f"✅ {widget_name} tıklandı", 0.5)
+        self.log_step(f"✅ {widget_name} tıklandı", 0.25)
 
     def move_mouse_to_widget(self, widget):
         """Fareyi belirtilen widget'ın ortasına taşı"""
         try:
             x = widget.winfo_rootx() + widget.winfo_width() // 2
             y = widget.winfo_rooty() + widget.winfo_height() // 2
-            pyautogui.moveTo(x, y, duration=0.5)
+            pyautogui.moveTo(x, y, duration=0.3)
         except Exception as exc:
             print(f"Mouse move error: {exc}")
         
     def navigate_to_finans_tab(self):
         """Finans-Tahsilat sekmesine git"""
-        self.log_step("📊 Finans-Tahsilat sekmesine geçiliyor...", 2)
+        self.log_step("📊 Finans-Tahsilat sekmesine geçiliyor...", 1)
 
         # GUI'de sekmeye geç
         self.call_in_gui_thread(self.gui.notebook.select, 1)
-        self.log_step("✅ Finans-Tahsilat sekmesi açıldı", 1)
+        self.log_step("✅ Finans-Tahsilat sekmesi açıldı", 0.5)
         
     def click_data_entry_button(self):
         """Veri Giriş butonuna tıkla"""
-        self.log_step("📋 Üstteki 'Veri Giriş' butonuna tıklanıyor...", 2)
+        self.log_step("📋 Üstteki 'Veri Giriş' butonuna tıklanıyor...", 1)
 
         # Veri Giriş modal'ını aç
         self.call_in_gui_thread(self.gui.open_data_entry)
-        self.log_step("✅ Veri Giriş penceresi açıldı", 2)
+        self.log_step("✅ Veri Giriş penceresi açıldı", 1)
         
     def load_excel_data(self):
         """Excel'den veri yükle"""
-        self.log_step("📂 Excel dosyasından veriler okunuyor...", 2)
+        self.log_step("📂 Excel dosyasından veriler okunuyor...", 1)
         
         try:
             # Excel dosyasını bul
@@ -122,7 +122,7 @@ class AdvancedRPABot:
                             'tutar': tutar
                         })
                         
-                    self.log_step(f"✅ {len(self.excel_data)} adet geçerli kayıt bulundu", 1)
+                    self.log_step(f"✅ {len(self.excel_data)} adet geçerli kayıt bulundu", 0.5)
                     return True
                     
             # Excel bulunamazsa test verisi oluştur
@@ -130,13 +130,13 @@ class AdvancedRPABot:
             return True
             
         except Exception as e:
-            self.log_step(f"❌ Excel okuma hatası: {e}", 1)
+            self.log_step(f"❌ Excel okuma hatası: {e}", 0.5)
             self.create_test_data()
             return True
             
     def create_test_data(self):
         """Test verisi oluştur"""
-        self.log_step("🧪 Test verisi oluşturuluyor...", 1)
+        self.log_step("🧪 Test verisi oluşturuluyor...", 0.5)
         
         test_records = [
             {"tarih": "23.07.2025", "aciklama": "POSH/20250723/000000002391280/N042 K P POS Satış /000001660659421", "tutar": "670.99"},
@@ -147,17 +147,17 @@ class AdvancedRPABot:
         ]
         
         self.excel_data = test_records
-        self.log_step(f"✅ {len(self.excel_data)} test kaydı hazırlandı", 1)
+        self.log_step(f"✅ {len(self.excel_data)} test kaydı hazırlandı", 0.5)
         
     def process_single_record(self, record):
         """Tek kaydı işle - Form doldur ve kaydet"""
-        self.log_step(f"📝 Kayıt işleniyor: {record['aciklama'][:50]}...", 1)
+        self.log_step(f"📝 Kayıt işleniyor: {record['aciklama'][:50]}...", 0.5)
         
         # 1. Tarih alanına tıkla ve veri gir
         self.click_simulation("Tarih alanı")
         self.call_in_gui_thread(self.gui.date_entry.delete, 0, tk.END)
         self.call_in_gui_thread(self.gui.date_entry.insert, 0, record['tarih'])
-        self.log_step(f"📅 Tarih girildi: {record['tarih']}", 1)
+        self.log_step(f"📅 Tarih girildi: {record['tarih']}", 0.5)
         
         # 2. Açıklama alanına tıkla ve veri gir
         self.click_simulation("Açıklama alanı")
@@ -166,25 +166,25 @@ class AdvancedRPABot:
         # Açıklamayı kısalt
         short_desc = record['aciklama'][:80] + "..." if len(record['aciklama']) > 80 else record['aciklama']
         self.call_in_gui_thread(self.gui.desc_entry.insert, 0, short_desc)
-        self.log_step(f"📝 Açıklama girildi: {short_desc[:30]}...", 1)
+        self.log_step(f"📝 Açıklama girildi: {short_desc[:30]}...", 0.5)
         
         # 3. Tutar alanına tıkla ve veri gir
         self.click_simulation("Tutar alanı")
         self.call_in_gui_thread(self.gui.amount_entry.delete, 0, tk.END)
         self.call_in_gui_thread(self.gui.amount_entry.insert, 0, record['tutar'])
-        self.log_step(f"💰 Tutar girildi: {record['tutar']} TL", 1)
+        self.log_step(f"💰 Tutar girildi: {record['tutar']} TL", 0.5)
         
         # 4. Kaydet butonuna tıkla
-        self.click_simulation("Kaydet butonu", 2)
+        self.click_simulation("Kaydet butonu", 1)
         self.call_in_gui_thread(self.gui.save_current_record)
-        self.log_step("✅ Kayıt başarıyla kaydedildi", 1)
+        self.log_step("✅ Kayıt başarıyla kaydedildi", 0.5)
         
         # 5. Kısa bekleme
-        self.log_step("⏳ Sonraki kayıt için hazırlanıyor...", 1.5)
+        self.log_step("⏳ Sonraki kayıt için hazırlanıyor...", 0.75)
         
     def run_automation_sequence(self):
         """Ana otomasyon sekansı"""
-        self.log_step("🤖 RPA Otomasyonu başlatılıyor...", 2)
+        self.log_step("🤖 RPA Otomasyonu başlatılıyor...", 1)
         
         try:
             # 1. Finans sekmesine git
@@ -195,7 +195,7 @@ class AdvancedRPABot:
             
             # 3. Excel verilerini yükle
             if not self.load_excel_data():
-                self.log_step("❌ Veri yüklenemedi, işlem durduruluyor", 1)
+                self.log_step("❌ Veri yüklenemedi, işlem durduruluyor", 0.5)
                 return
 
             # GUI'ye veriyi ata ve önizleme için göster
@@ -207,28 +207,28 @@ class AdvancedRPABot:
                     try:
                         self.call_in_gui_thread(self.gui.show_data)
                     except Exception as exc:
-                        self.log_step(f"❌ GUI gosterim hatasi: {exc}", 1)
+                        self.log_step(f"❌ GUI gosterim hatasi: {exc}", 0.5)
                 
             # 4. Her kayıt için döngü
             total_records = len(self.excel_data)
-            self.log_step(f"🔄 {total_records} kayıt işlenecek", 2)
+            self.log_step(f"🔄 {total_records} kayıt işlenecek", 1)
             
             for i, record in enumerate(self.excel_data, 1):
-                self.log_step(f"--- İŞLEM {i}/{total_records} ---", 1)
+                self.log_step(f"--- İŞLEM {i}/{total_records} ---", 0.5)
                 
                 # Kaydı işle
                 self.process_single_record(record)
                 
                 # İlerleme raporu
                 if i % 5 == 0:
-                    self.log_step(f"📊 İlerleme: {i}/{total_records} kayıt tamamlandı", 1)
+                    self.log_step(f"📊 İlerleme: {i}/{total_records} kayıt tamamlandı", 0.5)
                     
             # Tamamlandı
-            self.log_step("🎉 TÜM KAYITLAR BAŞARIYLA İŞLENDİ!", 3)
-            self.log_step(f"📈 Sonuç: {total_records} kayıt ana tabloya eklendi", 1)
+            self.log_step("🎉 TÜM KAYITLAR BAŞARIYLA İŞLENDİ!", 1.5)
+            self.log_step(f"📈 Sonuç: {total_records} kayıt ana tabloya eklendi", 0.5)
             
         except Exception as e:
-            self.log_step(f"❌ RPA Sistemi Hatası: {e}", 1)
+            self.log_step(f"❌ RPA Sistemi Hatası: {e}", 0.5)
             
     def run(self):
         """RPA'yi threading ile çalıştır"""

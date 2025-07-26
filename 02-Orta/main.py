@@ -44,23 +44,29 @@ def start_bot_threaded() -> threading.Thread | None:
     return bot.run()
 
 def start_both() -> None:
-    """GUI + RPA birlikte başlat"""
+    """GUI + RPA birlikte - Dashboard canlı gösterim"""
     global gui_app
 
+    print("🎬 SUNUM MODU BAŞLATILUYOR...")
+    print("📊 Dashboard canlı güncelleme aktif")
+    print("🤖 RPA hızlandırılmış mod")
+    print("🎨 Renkli tema aktif")
     print("🖥️ GUI başlatılıyor...")
     from accounting_gui import AdvancedAccountingGUI
 
     gui_app = AdvancedAccountingGUI()
 
-    # GUI'yi öne getir
-    gui_app.root.lift()
-    gui_app.root.attributes('-topmost', True)
-    gui_app.root.after(100, lambda: gui_app.root.attributes('-topmost', False))
-    gui_app.root.focus_force()
+    # Dashboard sekmesini aktif bırak (Finans'a geçmesin)
+    gui_app.notebook.select(0)
 
-    # RPA'yi 3 saniye sonra başlat (GUI tamamen yüklensin)
-    gui_app.root.after(3000, start_bot_threaded)
-    
+    # GUI'yi tam ekran yap
+    gui_app.root.state('zoomed')
+    gui_app.root.attributes('-topmost', True)
+    gui_app.root.after(200, lambda: gui_app.root.attributes('-topmost', False))
+
+    # RPA'yi 1 saniye sonra başlat (çok hızlı)
+    gui_app.root.after(1000, start_bot_threaded)
+
     gui_app.run()
 
 def show_demo_info():
