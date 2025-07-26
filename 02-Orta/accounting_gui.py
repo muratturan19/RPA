@@ -12,6 +12,11 @@ class AdvancedAccountingGUI:
         self.root.geometry("1400x800")
         self.root.state('zoomed')  # Tam ekran başlat
 
+        # GUI'yi merkeze al ve öne getir
+        self.root.lift()
+        self.root.attributes('-topmost', True)
+        self.root.after(100, lambda: self.root.attributes('-topmost', False))
+
         self.data = pd.DataFrame()
         self.filtered_data = pd.DataFrame()
 

@@ -55,8 +55,15 @@ def start_both() -> None:
 
     gui_app = AdvancedAccountingGUI()
 
-    # Start the bot shortly after the GUI opens so the window remains responsive
-    gui_app.root.after(100, start_bot_threaded)
+    # GUI'yi öne getir ve odakla
+    gui_app.root.lift()  # Pencereyi öne getir
+    gui_app.root.attributes('-topmost', True)  # En üstte tut
+    gui_app.root.after(100, lambda: gui_app.root.attributes('-topmost', False))  # 100ms sonra normal mod
+    gui_app.root.focus_force()  # Odağı zorla
+
+    # RPA'yı biraz gecikmeyle başlat ki GUI tam yüklensin
+    gui_app.root.after(2000, start_bot_threaded)  # 2 saniye sonra RPA başlat
+
     gui_app.run()
 
 
