@@ -365,6 +365,26 @@ class AdvancedAccountingGUI:
     def export_records(self):
         """Kayıtları dışa aktar"""
         self.update_status("Dışa aktarma özelliği henüz geliştirilmemiş.")
+
+    def show_data(self):
+        """Yüklenen Excel verilerini göster"""
+        if not self.current_records:
+            messagebox.showinfo("Bilgi", "Gösterilecek veri bulunamadı.")
+            return
+
+        preview = tk.Toplevel(self.root)
+        preview.title("Yüklenen Veriler")
+
+        columns = list(self.current_records[0].keys())
+        tree = ttk.Treeview(preview, columns=columns, show="headings", height=15)
+        for col in columns:
+            tree.heading(col, text=col.title())
+            tree.column(col, width=150, anchor="w")
+        for rec in self.current_records:
+            tree.insert("", "end", values=[rec.get(col, "") for col in columns])
+        tree.pack(fill="both", expand=True, padx=10, pady=10)
+
+        ttk.Button(preview, text="Kapat", command=preview.destroy).pack(pady=5)
         
     def update_status(self, message):
         """Durum çubuğunu güncelle"""
