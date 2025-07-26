@@ -268,7 +268,7 @@ class AdvancedAccountingGUI:
         messagebox.showinfo("Bilgi", "Gelişmiş filtre özelliği yakında eklenecek.")
 
     def apply_advanced_filter(self):
-        """Gelişmiş filtreleme"""
+        """Gelişmiş filtreleme - dinamik sütun bulma ile"""
         if self.data.empty:
             messagebox.showwarning("Uyarı", "Önce Excel dosyası yükleyin.")
             return
@@ -276,21 +276,25 @@ class AdvancedAccountingGUI:
         try:
             filtered = self.data.copy()
 
-            # Pattern filtresi (Açıklama sütunu varsa)
-            if 'Açıklama' in filtered.columns:
+            # Açıklama sütununu dinamik bul
+            aciklama_cols = [col for col in filtered.columns if 'açıklama' in str(col).lower()]
+            if aciklama_cols:
+                aciklama_col = aciklama_cols[0]
                 pattern = self.pattern_var.get().strip()
                 if pattern:
-                    filtered = filtered[filtered['Açıklama'].str.match(pattern, na=False)]
+                    filtered = filtered[filtered[aciklama_col].str.match(pattern, na=False)]
 
-            # Tutar filtreleri
-            if 'Tutar' in filtered.columns:
+            # Tutar sütununu dinamik bul
+            tutar_cols = [col for col in filtered.columns if 'tutar' in str(col).lower()]
+            if tutar_cols:
+                tutar_col = tutar_cols[0]
                 min_val = self.min_amount.get().strip()
                 max_val = self.max_amount.get().strip()
 
                 if min_val:
-                    filtered = filtered[filtered['Tutar'] >= float(min_val)]
+                    filtered = filtered[filtered[tutar_col] >= float(min_val)]
                 if max_val:
-                    filtered = filtered[filtered['Tutar'] <= float(max_val)]
+                    filtered = filtered[filtered[tutar_col] <= float(max_val)]
 
             self.filtered_data = filtered
             self.show_data(filtered)
@@ -345,15 +349,21 @@ class AdvancedAccountingGUI:
         # Temel istatistikler
         total_records = len(data)
 
-        # Tutar sütunu varsa hesapla
-        if 'Tutar' in data.columns:
-            positive_sum = data[data['Tutar'] > 0]['Tutar'].sum()
-            negative_sum = abs(data[data['Tutar'] < 0]['Tutar'].sum())
-            net_balance = data['Tutar'].sum()
+        # Tutar sütununu dinamik bul
+        tutar_cols = [col for col in data.columns if 'tutar' in str(col).lower()]
+        if tutar_cols:
+            tutar_col = tutar_cols[0]
+            positive_sum = data[data[tutar_col] > 0][tutar_col].sum()
+            negative_sum = abs(data[data[tutar_col] < 0][tutar_col].sum())
+            net_balance = data[tutar_col].sum()
 
             self.summary_labels["Borç Toplamı:"].config(text=f"{positive_sum:,.2f} TL")
             self.summary_labels["Alacak Toplamı:"].config(text=f"{negative_sum:,.2f} TL")
             self.summary_labels["Net Bakiye:"].config(text=f"{net_balance:,.2f} TL")
+        else:
+            self.summary_labels["Borç Toplamı:"].config(text="0.00 TL")
+            self.summary_labels["Alacak Toplamı:"].config(text="0.00 TL")
+            self.summary_labels["Net Bakiye:"].config(text="0.00 TL")
 
         self.summary_labels["Toplam Kayıt:"].config(text=str(total_records))
         self.summary_labels["Son Güncelleme:"].config(text=datetime.now().strftime("%d.%m.%Y %H:%M"))
