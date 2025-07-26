@@ -133,19 +133,47 @@ class EnterpriseRPABot:
                 pass
 
     def wait_for_modal_ready(self, timeout: int = 10) -> bool:
-        """Modal'ın hazır olmasını bekle"""
+        """URGENT FIX: Modal'ın hazır olmasını bekle"""
+        print(f"🔍 Modal hazır mı kontrol ediliyor... (timeout: {timeout}s)")
+
         start_time = time.time()
+        attempt = 0
+
         while time.time() - start_time < timeout:
-            if (
-                self.gui
-                and hasattr(self.gui, 'data_entry_window')
-                and self.gui.data_entry_window
-                and hasattr(self.gui, 'modal_entries')
-                and self.gui.modal_entries
-            ):
-                self.log_step("✅ Modal form hazır", 0.5)
-                return True
-            time.sleep(0.5)
+            attempt += 1
+
+            # Detaylı kontrol
+            if not self.gui:
+                print(f"❌ GUI yok (deneme {attempt})")
+                time.sleep(0.5)
+                continue
+
+            if not hasattr(self.gui, 'data_entry_window'):
+                print(f"❌ data_entry_window attribute yok (deneme {attempt})")
+                time.sleep(0.5)
+                continue
+
+            if not self.gui.data_entry_window:
+                print(f"❌ data_entry_window None (deneme {attempt})")
+                time.sleep(0.5)
+                continue
+
+            if not hasattr(self.gui, 'modal_entries'):
+                print(f"❌ modal_entries attribute yok (deneme {attempt})")
+                time.sleep(0.5)
+                continue
+
+            if not self.gui.modal_entries:
+                print(f"❌ modal_entries None (deneme {attempt})")
+                time.sleep(0.5)
+                continue
+
+            # Tüm kontroller geçti!
+            print(f"✅ Modal hazır! (deneme {attempt})")
+            self.log_step("✅ Modal form hazır", 0.5)
+            return True
+
+        print(f"❌ Modal timeout! ({timeout}s)")
         return False
 
     def find_modal_form(self):
@@ -337,13 +365,44 @@ class EnterpriseRPABot:
         self.call_in_gui_thread(self.gui.step4_set_parameters)
         
     def execute_step5_data_entry(self):
-        """Adım 5: Veri giriş başlatma - MODAL AÇMA"""
+        """Adım 5: Veri giriş başlatma - URGENT FIX"""
         self.log_step("🚀 Kritik Adım: Veri Giriş Modal'ı açılıyor...", 1.0)
-        if hasattr(self.gui, 'finans_frame'):
-            self.call_in_gui_thread(self.highlight_widget, self.gui.finans_frame)
-        self.call_in_gui_thread(self.gui.step5_start_data_entry)
-        
-        # Modal'ın açılması için bekle
+
+        # URGENT: Modal açılmasını bekle ve doğrula
+        modal_opened = False
+
+        try:
+            # Step5'i çağır
+            result = self.call_in_gui_thread(self.gui.step5_start_data_entry)
+            print(f"step5_start_data_entry sonucu: {result}")
+
+            # Modal açılana kadar bekle - MAXIMUM 10 saniye
+            for i in range(20):  # 20 x 0.5 = 10 saniye
+                time.sleep(0.5)
+
+                # Modal açıldı mı kontrol et
+                if (
+                    self.gui and
+                    hasattr(self.gui, 'data_entry_window') and
+                    self.gui.data_entry_window and
+                    hasattr(self.gui, 'modal_entries') and
+                    self.gui.modal_entries
+                ):
+                    print(f"✅ Modal hazır! ({i+1}. deneme)")
+                    modal_opened = True
+                    break
+                else:
+                    print(f"⏳ Modal bekleniyor... ({i+1}/20)")
+
+            if modal_opened:
+                self.log_step("✅ Modal başarıyla açıldı ve hazır", 1.0)
+            else:
+                self.log_step("❌ Modal açılamadı - TIMEOUT", 1.0)
+
+        except Exception as e:
+            self.log_step(f"❌ Modal açma kritik hatası: {e}", 1.0)
+
+        # Modal'ın açılması için ekstra bekleme
         self.log_step("⏳ Veri Giriş Modal'ının yüklenmesi bekleniyor...", 2.0)
         
     def execute_step6_batch_confirm(self):
