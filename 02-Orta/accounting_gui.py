@@ -444,6 +444,10 @@ class AdvancedAccountingGUI:
         self.update_status("Muhasebe Pro Hazır - Dashboard")
         self.root.mainloop()
 
+    def set_current_records(self, records):
+        """Excel'den okunan kayıtları ata"""
+        self.current_records = list(records)
+
 # Test
 if __name__ == "__main__":
     app = AdvancedAccountingGUI()

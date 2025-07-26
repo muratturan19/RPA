@@ -200,14 +200,14 @@ class AdvancedRPABot:
 
             # GUI'ye veriyi ata ve önizleme için göster
             if self.gui is not None:
-                self.gui.current_records = list(self.excel_data)
-                print(f"DEBUG: GUI data assigned: {len(self.excel_data)} rows")
-                if hasattr(self.gui, "show_data"):
-                    print("DEBUG: Calling gui.show_data()...")
-                    try:
+                try:
+                    self.call_in_gui_thread(
+                        self.gui.set_current_records, list(self.excel_data)
+                    )
+                    if hasattr(self.gui, "show_data"):
                         self.call_in_gui_thread(self.gui.show_data)
-                    except Exception as exc:
-                        self.log_step(f"❌ GUI gosterim hatasi: {exc}", 0.5)
+                except Exception as exc:
+                    self.log_step(f"❌ GUI gosterim hatasi: {exc}", 0.5)
                 
             # 4. Her kayıt için döngü
             total_records = len(self.excel_data)
@@ -249,3 +249,8 @@ class AdvancedRPABot:
         thread = threading.Thread(target=automation_worker, daemon=True)
         thread.start()
         return thread
+
+    def stop(self):
+        """RPA'yi durdur"""
+        self.is_running = False
+        print("🛑 RPA sistemi durduruldu")
