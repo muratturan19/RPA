@@ -3,6 +3,7 @@ import threading
 import pandas as pd
 from pathlib import Path
 import tkinter as tk
+import pyautogui
 
 class AdvancedRPABot:
     """Gerçekçi RPA botu - Presto benzeri akış"""
@@ -24,27 +25,66 @@ class AdvancedRPABot:
         if self.gui:
             self.gui.update_status(f"RPA: {message}")
         time.sleep(delay)
+
+    def call_in_gui_thread(self, func, *args, **kwargs):
+        """Tkinter ana döngüsünde fonksiyon çalıştır"""
+        if not self.gui:
+            return
+        done = threading.Event()
+
+        def wrapper():
+            try:
+                func(*args, **kwargs)
+            finally:
+                done.set()
+
+        self.gui.root.after(0, wrapper)
+        done.wait()
         
     def click_simulation(self, widget_name, delay=1):
         """Widget tıklama simülasyonu"""
         self.log_step(f"🖱️ {widget_name} tıklanıyor...", 0.5)
+
+        widget = None
+        if self.gui:
+            if widget_name == "Tarih alanı":
+                widget = self.gui.date_entry
+            elif widget_name == "Açıklama alanı":
+                widget = self.gui.desc_entry
+            elif widget_name == "Tutar alanı":
+                widget = self.gui.amount_entry
+            elif widget_name == "Kaydet butonu":
+                widget = self.gui.save_btn
+
+        if widget is not None:
+            self.call_in_gui_thread(self.move_mouse_to_widget, widget)
+
         time.sleep(delay)
         self.log_step(f"✅ {widget_name} tıklandı", 0.5)
+
+    def move_mouse_to_widget(self, widget):
+        """Fareyi belirtilen widget'ın ortasına taşı"""
+        try:
+            x = widget.winfo_rootx() + widget.winfo_width() // 2
+            y = widget.winfo_rooty() + widget.winfo_height() // 2
+            pyautogui.moveTo(x, y, duration=0.5)
+        except Exception as exc:
+            print(f"Mouse move error: {exc}")
         
     def navigate_to_finans_tab(self):
         """Finans-Tahsilat sekmesine git"""
         self.log_step("📊 Finans-Tahsilat sekmesine geçiliyor...", 2)
-        
+
         # GUI'de sekmeye geç
-        self.gui.notebook.select(1)  # Index 1 = Finans-Tahsilat
+        self.call_in_gui_thread(self.gui.notebook.select, 1)
         self.log_step("✅ Finans-Tahsilat sekmesi açıldı", 1)
         
     def click_data_entry_button(self):
         """Veri Giriş butonuna tıkla"""
         self.log_step("📋 Üstteki 'Veri Giriş' butonuna tıklanıyor...", 2)
-        
+
         # Veri Giriş modal'ını aç
-        self.gui.open_data_entry()
+        self.call_in_gui_thread(self.gui.open_data_entry)
         self.log_step("✅ Veri Giriş penceresi açıldı", 2)
         
     def load_excel_data(self):
@@ -115,28 +155,28 @@ class AdvancedRPABot:
         
         # 1. Tarih alanına tıkla ve veri gir
         self.click_simulation("Tarih alanı")
-        self.gui.date_entry.delete(0, tk.END)
-        self.gui.date_entry.insert(0, record['tarih'])
+        self.call_in_gui_thread(self.gui.date_entry.delete, 0, tk.END)
+        self.call_in_gui_thread(self.gui.date_entry.insert, 0, record['tarih'])
         self.log_step(f"📅 Tarih girildi: {record['tarih']}", 1)
         
         # 2. Açıklama alanına tıkla ve veri gir
         self.click_simulation("Açıklama alanı")
-        self.gui.desc_entry.delete(0, tk.END)
+        self.call_in_gui_thread(self.gui.desc_entry.delete, 0, tk.END)
         
         # Açıklamayı kısalt
         short_desc = record['aciklama'][:80] + "..." if len(record['aciklama']) > 80 else record['aciklama']
-        self.gui.desc_entry.insert(0, short_desc)
+        self.call_in_gui_thread(self.gui.desc_entry.insert, 0, short_desc)
         self.log_step(f"📝 Açıklama girildi: {short_desc[:30]}...", 1)
         
         # 3. Tutar alanına tıkla ve veri gir
         self.click_simulation("Tutar alanı")
-        self.gui.amount_entry.delete(0, tk.END)
-        self.gui.amount_entry.insert(0, record['tutar'])
+        self.call_in_gui_thread(self.gui.amount_entry.delete, 0, tk.END)
+        self.call_in_gui_thread(self.gui.amount_entry.insert, 0, record['tutar'])
         self.log_step(f"💰 Tutar girildi: {record['tutar']} TL", 1)
         
         # 4. Kaydet butonuna tıkla
         self.click_simulation("Kaydet butonu", 2)
-        self.gui.save_current_record()
+        self.call_in_gui_thread(self.gui.save_current_record)
         self.log_step("✅ Kayıt başarıyla kaydedildi", 1)
         
         # 5. Kısa bekleme
@@ -165,7 +205,7 @@ class AdvancedRPABot:
                 if hasattr(self.gui, "show_data"):
                     print("DEBUG: Calling gui.show_data()...")
                     try:
-                        self.gui.show_data()
+                        self.call_in_gui_thread(self.gui.show_data)
                     except Exception as exc:
                         self.log_step(f"❌ GUI gosterim hatasi: {exc}", 1)
                 

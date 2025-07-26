@@ -319,9 +319,10 @@ class AdvancedAccountingGUI:
         
         # Ana tabloyu güncelle
         self.main_tree.insert('', 'end', values=[
-            record_id, date_val, desc_val, f"{amount_float:.2f} TL", 
+            record_id, date_val, desc_val, f"{amount_float:.2f} TL",
             'Kaydedildi', timestamp
         ])
+        print(f"DEBUG: main_tree children: {len(self.main_tree.get_children())}")
         
         # Dashboard'u güncelle
         self.update_dashboard_stats()
