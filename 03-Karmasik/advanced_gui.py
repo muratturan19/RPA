@@ -616,7 +616,7 @@ class EnterpriseGUI:
     # === MODAL FONKSİYONLARI ===
     
     def save_advanced_record(self):
-        """Düzeltilmiş kayıt kaydetme - doğru sayılarla"""
+        """DÜZELTME: Pop-up'sız sessiz kayıt kaydetme"""
         # Form verilerini al
         data = {}
         for key, entry in self.modal_entries.items():
@@ -656,16 +656,16 @@ class EnterpriseGUI:
         # Dashboard güncellemesi
         self.update_dashboard_stats()
         
-        # Progress güncelle - DÜZELTME: Doğru toplam sayı
+        # Progress güncelle - DOĞRU SAYILAR
         total_expected = len(self.current_records) if self.current_records else 100
         current_progress = len(self.main_data)
         progress_percent = min(100, (current_progress / total_expected) * 100)
         self.modal_progress['value'] = progress_percent
 
-        # DÜZELTME: Modal üstünde başarı pop-up'ı
-        self.show_modal_success(
-            "Başarılı",
-            f"Kayıt {record_id} kaydedildi!\n({current_progress}/{total_expected})"
+        # DÜZELTME: Sessiz success - pop-up yok, sadece status
+        self.modal_status.config(
+            text=f"✅ Kayıt {record_id} kaydedildi! ({current_progress}/{total_expected})",
+            foreground='#a6e3a1'
         )
 
         # Form temizle
@@ -724,7 +724,7 @@ class EnterpriseGUI:
         self.update_process_status("\U0001f7e1 Veri giriş sistemi kapatıldı")
 
     def show_modal_success(self, title: str, message: str):
-        """Modal üstünde başarı mesajı"""
+        """DÜZELTME: Onay bekleyen modal success"""
         popup = tk.Toplevel(self.data_entry_window)
         popup.title(title)
         popup.geometry("350x150")
@@ -736,6 +736,7 @@ class EnterpriseGUI:
 
         popup.transient(self.data_entry_window)
         popup.attributes('-topmost', True)
+        popup.grab_set()  # Modal yap - kullanıcı onaylamalı
         popup.lift()
         popup.focus_set()
 
@@ -745,7 +746,8 @@ class EnterpriseGUI:
                  bg='#2E3440', fg='#cdd6f4', justify='center').pack(pady=5)
         tk.Button(popup, text="Tamam", command=popup.destroy,
                   bg='#89b4fa', fg='#1e1e2e', font=('Segoe UI', 10, 'bold')).pack(pady=10)
-        popup.after(2000, popup.destroy)
+        # DÜZELTME: Otomatik kapatma YOK - kullanıcı tıklamalı
+        # popup.after(2000, popup.destroy)  # Bu satırı kaldır
 
     def show_modal_warning(self, title: str, message: str):
         """Modal üstünde uyarı mesajı"""
@@ -796,15 +798,53 @@ class EnterpriseGUI:
     # === YARDIMCI FONKSİYONLAR ===
     
     def update_dashboard_stats(self):
-        """Dashboard istatistiklerini güncelle"""
+        """DÜZELTME: Doğru dashboard istatistikleri"""
         if hasattr(self, 'total_transactions_label'):
             total = len(self.main_data)
-            today = len([r for r in self.main_data 
-                        if r['date'] == datetime.now().strftime('%d.%m.%Y')])
-            
+            today = len([
+                r for r in self.main_data
+                if r['date'] == datetime.now().strftime('%d.%m.%Y')
+            ])
+
+            # DÜZELTME: String olarak ayarla
             self.total_transactions_label.config(text=str(total))
             if hasattr(self, 'today_transactions_label'):
                 self.today_transactions_label.config(text=str(today))
+
+            # DÜZELTME: Diğer kartları da güncelle
+            if hasattr(self, 'stats_frame'):
+                file_count = (
+                    len(self.processing_files)
+                    if self.processing_files
+                    else len(self.current_records) // 25
+                )
+                success_rate = (
+                    int((total / len(self.current_records) * 100))
+                    if self.current_records
+                    else 0
+                )
+
+                cards = (
+                    self.stats_frame.winfo_children()
+                    if hasattr(self, 'stats_frame')
+                    else []
+                )
+                if len(cards) >= 4:
+                    aktif_dosya_label = (
+                        cards[2].winfo_children()[0]
+                        if cards[2].winfo_children()
+                        else None
+                    )
+                    if aktif_dosya_label:
+                        aktif_dosya_label.config(text=str(file_count))
+
+                    basari_orani_label = (
+                        cards[3].winfo_children()[0]
+                        if cards[3].winfo_children()
+                        else None
+                    )
+                    if basari_orani_label:
+                        basari_orani_label.config(text=f"%{success_rate}")
                 
     def update_process_status(self, message):
         """Süreç durumunu güncelle"""
