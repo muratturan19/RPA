@@ -96,7 +96,8 @@ class EnterpriseRPABot:
         try:
             self.gui.root.winfo_exists()
             self.gui.root.after(0, wrapper)
-            done.wait(timeout=5.0)
+            # Adım içi onay gerektiren pop-up'lar için süre sınırı olmadan bekle
+            done.wait()
         except tk.TclError:
             self.log_step("⚠️ Ana pencere mevcut değil", 0.1)
             return None
