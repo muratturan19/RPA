@@ -179,7 +179,9 @@ class EnterpriseRPABot:
         except Exception as e:
             self.log_step(f"⚠️ Mouse hareket hatası: {e}", 0.1)
             
-    def click_widget_simulation(self, widget_name: str, widget=None, delay: float = 0.5):
+    def click_widget_simulation(
+        self, widget_name: str, widget=None, delay: float = 0.5, call_after: bool = True
+    ):
         """Widget tıklama simülasyonu - gelişmiş"""
         self.log_step(f"🖱️ {widget_name} tıklanıyor...", 0.2)
 
@@ -190,7 +192,8 @@ class EnterpriseRPABot:
         # Tıklama gecikmesi
         time.sleep(random.uniform(0.1, 0.3) * self.delay_factor)
         self.log_step(f"✅ {widget_name} başarıyla tıklandı", delay)
-        self.call_in_gui_thread(self.after_mouse_click)
+        if call_after:
+            self.call_in_gui_thread(self.after_mouse_click)
         
     # === PHASE 1: KARMAŞIK GUI NAVİGASYONU ===
     
@@ -212,7 +215,7 @@ class EnterpriseRPABot:
 
         # 0 - Dashboard sekmesine tıkla
         dashboard_widget = self.get_tab_widget(0)
-        self.click_widget_simulation("Dashboard sekmesi", dashboard_widget)
+        self.click_widget_simulation("Dashboard sekmesi", dashboard_widget, call_after=False)
         self.call_in_gui_thread(self.gui.notebook.select, 0)
 
         # Sırayla Muhasebe(1), Stok(3), Raporlar(4), Sistem(5)
@@ -225,22 +228,21 @@ class EnterpriseRPABot:
 
         for idx, name in sequence:
             widget = self.get_tab_widget(idx)
-            self.click_widget_simulation(f"{name} sekmesi", widget)
+            self.click_widget_simulation(f"{name} sekmesi", widget, call_after=False)
             self.call_in_gui_thread(self.gui.notebook.select, idx)
 
         # Son olarak Finans-Tahsilat(2)
         finance_widget = self.get_tab_widget(2)
-        self.click_widget_simulation("Finans-Tahsilat sekmesi", finance_widget)
+        self.click_widget_simulation("Finans-Tahsilat sekmesi", finance_widget, call_after=False)
         self.call_in_gui_thread(self.gui.notebook.select, 2)
 
         # Veri Giriş modal'ını aç
         self.log_step("🚀 Veri Giriş modal'ı açılıyor...", 0.8)
-        self.call_in_gui_thread(self.gui.open_advanced_data_entry)
         self.log_step("⏳ Modal yükleniyor...", 1.0)
 
         # Dashboard sekmesine geri dön (modal açık kalsın)
         self.log_step("↩️ Dashboard sekmesine dönülüyor (modal açık)...", 0.5)
-        self.click_widget_simulation("Dashboard sekmesi", dashboard_widget)
+        self.click_widget_simulation("Dashboard sekmesi", dashboard_widget, call_after=False)
         self.call_in_gui_thread(self.gui.notebook.select, 0)
 
         # Veri girişi başlat
@@ -565,7 +567,7 @@ class EnterpriseRPABot:
     def stop(self):
         """RPA'yi durdur"""
         self.is_running = False
-        self.log_step("🛑 RPA sistemi durduruldu", 1.0)
+        print("🛑 RPA sistemi durduruldu")
 
 # Test fonksiyonu
 if __name__ == "__main__":
