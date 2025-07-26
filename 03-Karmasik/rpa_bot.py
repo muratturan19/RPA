@@ -69,8 +69,16 @@ class EnterpriseRPABot:
     def call_in_gui_thread(self, func, *args, **kwargs):
         """Tkinter ana döngüsünde güvenli fonksiyon çalıştırma"""
         if not self.gui or not hasattr(self.gui, 'root'):
-            return
-            
+            return None
+
+        # Widget kontrolü
+        if args and hasattr(args[0], 'winfo_exists'):
+            try:
+                args[0].winfo_exists()
+            except tk.TclError:
+                self.log_step("⚠️ Widget artık mevcut değil", 0.1)
+                return None
+
         done = threading.Event()
         result = None
         exception = None
@@ -84,9 +92,15 @@ class EnterpriseRPABot:
             finally:
                 done.set()
 
-        self.gui.root.after(0, wrapper)
-        done.wait(timeout=5.0)  # 5 saniye timeout
-        
+        # Root kontrolü
+        try:
+            self.gui.root.winfo_exists()
+            self.gui.root.after(0, wrapper)
+            done.wait(timeout=5.0)
+        except tk.TclError:
+            self.log_step("⚠️ Ana pencere mevcut değil", 0.1)
+            return None
+
         if exception:
             self.log_step(f"⚠️ GUI thread hatası: {exception}", 0.1)
         return result
@@ -117,6 +131,39 @@ class EnterpriseRPABot:
                 self.gui.data_entry_window.focus_force()
             except Exception:
                 pass
+
+    def wait_for_modal_ready(self, timeout: int = 10) -> bool:
+        """Modal'ın hazır olmasını bekle"""
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if (
+                self.gui
+                and hasattr(self.gui, 'data_entry_window')
+                and self.gui.data_entry_window
+                and hasattr(self.gui, 'modal_entries')
+                and self.gui.modal_entries
+            ):
+                self.log_step("✅ Modal form hazır", 0.5)
+                return True
+            time.sleep(0.5)
+        return False
+
+    def find_modal_form(self):
+        """Modal formu güvenli şekilde bul"""
+        if not self.gui:
+            return None
+
+        if not hasattr(self.gui, 'data_entry_window') or not self.gui.data_entry_window:
+            return None
+
+        if not hasattr(self.gui, 'modal_entries') or not self.gui.modal_entries:
+            return None
+
+        try:
+            self.gui.data_entry_window.winfo_exists()
+            return self.gui.modal_entries
+        except tk.TclError:
+            return None
 
     class _BBoxWidget:
         """Notebook sekmeleri için sanal widget"""
@@ -426,41 +473,42 @@ class EnterpriseRPABot:
         self.log_step(f"✅ {file_name} dosyasının tüm kayıtları işlendi", 1.0)
         
     def process_single_record(self, record: Dict, record_num: int, total: int) -> bool:
-        """Tek kayıt işleme - Modal form doldurma"""
+        """Düzeltilmiş tek kayıt işleme"""
         try:
-            # Form alanlarını doldur
-            if not self.gui or not hasattr(self.gui, 'modal_entries'):
+            # Önce modal'ın hazır olduğundan emin ol
+            if not self.wait_for_modal_ready(5):
+                self.log_step("⚠️ Modal form hazır değil, kayıt atlanıyor", 0.5)
+                return False
+
+            # Modal formunu bul
+            modal_entries = self.find_modal_form()
+            if not modal_entries:
                 self.log_step("⚠️ Modal form bulunamadı, kayıt atlanıyor", 0.5)
                 return False
-                
-            entries = self.gui.modal_entries
-            
+
+            entries = modal_entries
+
             # 1. Tarih alanı
             self.log_step(f"📅 Tarih giriliyor: {record['tarih']}", 0.3)
-            self.click_widget_simulation("Tarih alanı", entries.get('date_entry'))
             self.call_in_gui_thread(self.fill_entry_field, entries['date_entry'], record['tarih'])
-            
+
             # 2. Açıklama alanı
             short_desc = record['aciklama'][:80] + "..." if len(record['aciklama']) > 80 else record['aciklama']
             self.log_step(f"📝 Açıklama giriliyor: {short_desc[:30]}...", 0.3)
-            self.click_widget_simulation("Açıklama alanı", entries.get('desc_entry'))
             self.call_in_gui_thread(self.fill_entry_field, entries['desc_entry'], short_desc)
-            
+
             # 3. Tutar alanı
             self.log_step(f"💰 Tutar giriliyor: {record['tutar']}", 0.3)
-            self.click_widget_simulation("Tutar alanı", entries.get('amount_entry'))
             self.call_in_gui_thread(self.fill_entry_field, entries['amount_entry'], record['tutar'])
-            
+
             # 4. Dosya alanı
             self.log_step(f"📁 Dosya adı giriliyor: {record['dosya']}", 0.3)
-            self.click_widget_simulation("Dosya alanı", entries.get('file_entry'))
             self.call_in_gui_thread(self.fill_entry_field, entries['file_entry'], record['dosya'])
-            
-            # 5. Kaydet butonu
+
+            # 5. Kaydet butonu - Modal'ın save fonksiyonunu çağır
             self.log_step("💾 Kayıt kaydediliyor...", 0.5)
-            self.click_widget_simulation("Kaydet butonu")
             self.call_in_gui_thread(self.gui.save_advanced_record)
-            
+
             self.log_step(f"✅ Kayıt {record_num}/{total} başarıyla işlendi", 0.8)
             return True
             
