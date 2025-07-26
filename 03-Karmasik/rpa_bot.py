@@ -27,7 +27,9 @@ class EnterpriseRPABot:
         self.failed_records = 0
         
         # Performans ayarları
-        self.processing_speed = "normal"  # "slow", "normal", "fast"
+        self.processing_speed = "fast"  # "slow", "normal", "fast"
+        # Tüm beklemeleri yarıya indirmek için katsayı
+        self.delay_factor = 0.5
         self.mouse_simulation = True
         self.detailed_logging = True
         
@@ -61,7 +63,7 @@ class EnterpriseRPABot:
             
         # Hız ayarına göre bekleme
         speed_multiplier = {"slow": 2.0, "normal": 1.0, "fast": 0.3}
-        actual_delay = delay * speed_multiplier.get(self.processing_speed, 1.0)
+        actual_delay = delay * speed_multiplier.get(self.processing_speed, 1.0) * self.delay_factor
         time.sleep(actual_delay)
 
     def call_in_gui_thread(self, func, *args, **kwargs):
@@ -88,13 +90,32 @@ class EnterpriseRPABot:
         if exception:
             self.log_step(f"⚠️ GUI thread hatası: {exception}", 0.1)
         return result
+
+    def focus_window(self):
+        """GUI penceresini öne getir"""
+        if self.gui and hasattr(self.gui, 'root'):
+            self.gui.root.lift()
+            self.gui.root.attributes('-topmost', True)
+            self.gui.root.after(100, lambda: self.gui.root.attributes('-topmost', False))
+            self.gui.root.focus_force()
+
+    def highlight_widget(self, widget, flash_ms: int = 150):
+        """Kısa bir highlight efekti uygula"""
+        try:
+            orig_bg = widget.cget('highlightbackground')
+            orig_thick = widget.cget('highlightthickness')
+            widget.configure(highlightbackground='red', highlightthickness=2)
+            widget.after(flash_ms, lambda: widget.configure(highlightbackground=orig_bg, highlightthickness=orig_thick))
+        except Exception:
+            pass
         
     def move_mouse_to_widget(self, widget, smooth: bool = True):
         """Fareyi widget'a yumuşak hareketle taşı"""
         if not self.mouse_simulation:
             return
-            
+
         try:
+            self.focus_window()
             # Widget koordinatlarını al
             x = widget.winfo_rootx() + widget.winfo_width() // 2
             y = widget.winfo_rooty() + widget.winfo_height() // 2
@@ -108,7 +129,7 @@ class EnterpriseRPABot:
             pyautogui.moveTo(x, y, duration=duration)
             
             # Çok kısa bekleme (gerçekçi)
-            time.sleep(random.uniform(0.05, 0.15))
+            time.sleep(random.uniform(0.05, 0.15) * self.delay_factor)
             
         except Exception as e:
             self.log_step(f"⚠️ Mouse hareket hatası: {e}", 0.1)
@@ -116,12 +137,13 @@ class EnterpriseRPABot:
     def click_widget_simulation(self, widget_name: str, widget=None, delay: float = 0.5):
         """Widget tıklama simülasyonu - gelişmiş"""
         self.log_step(f"🖱️ {widget_name} tıklanıyor...", 0.2)
-        
+
         if widget and self.mouse_simulation:
             self.call_in_gui_thread(self.move_mouse_to_widget, widget, True)
-            
+            self.call_in_gui_thread(self.highlight_widget, widget)
+
         # Tıklama gecikmesi
-        time.sleep(random.uniform(0.1, 0.3))
+        time.sleep(random.uniform(0.1, 0.3) * self.delay_factor)
         self.log_step(f"✅ {widget_name} başarıyla tıklandı", delay)
         
     # === PHASE 1: KARMAŞIK GUI NAVİGASYONU ===
@@ -129,7 +151,13 @@ class EnterpriseRPABot:
     def phase1_navigate_to_finance_module(self):
         """1. Faz: Finans modülüne karmaşık navigasyon"""
         self.log_step("🎯 FAZ 1: Finans-Tahsilat modülüne navigasyon başlıyor...", 1.0)
-        
+
+        # Önce Dashboard sekmesine geç ve göster
+        self.log_step("🏠 Adım 0: Dashboard sekmesi öne getiriliyor...", 0.5)
+        self.call_in_gui_thread(self.gui.notebook.select, 0)
+        if hasattr(self.gui, 'dashboard_frame'):
+            self.call_in_gui_thread(self.highlight_widget, self.gui.dashboard_frame)
+
         # Adım 1: Ana menüden Finans seç (simülasyon)
         self.log_step("📋 Adım 1.1: Ana menüden 'Finans-Tahsilat' seçiliyor...", 0.8)
         self.call_in_gui_thread(self.gui.menu_selected, "💰 Finans", "Tahsilat İşlemleri")
@@ -137,6 +165,8 @@ class EnterpriseRPABot:
         # Adım 2: Finans sekmesine geç
         self.log_step("📊 Adım 1.2: Finans-Tahsilat sekmesine geçiliyor...", 1.0)
         self.call_in_gui_thread(self.gui.notebook.select, 2)  # Finans sekmesi (index 2)
+        if hasattr(self.gui, 'finans_frame'):
+            self.call_in_gui_thread(self.highlight_widget, self.gui.finans_frame)
         
         # Adım 3: Alt sekme navigasyonu (Veri İşlemleri)
         self.log_step("🔧 Adım 1.3: 'Veri İşlemleri' alt sekmesine yönlendiriliyor...", 0.8)
@@ -186,6 +216,8 @@ class EnterpriseRPABot:
     def execute_step5_data_entry(self):
         """Adım 5: Veri giriş başlatma - MODAL AÇMA"""
         self.log_step("🚀 Kritik Adım: Veri Giriş Modal'ı açılıyor...", 1.0)
+        if hasattr(self.gui, 'finans_frame'):
+            self.call_in_gui_thread(self.highlight_widget, self.gui.finans_frame)
         self.call_in_gui_thread(self.gui.step5_start_data_entry)
         
         # Modal'ın açılması için bekle
@@ -313,7 +345,7 @@ class EnterpriseRPABot:
                 self.failed_records += 1
                 
             # Kayıtlar arası kısa bekleme
-            time.sleep(random.uniform(0.2, 0.5))
+            time.sleep(random.uniform(0.2, 0.5) * self.delay_factor)
             
         self.log_step(f"✅ {file_name} dosyasının tüm kayıtları işlendi", 1.0)
         
