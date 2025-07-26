@@ -108,6 +108,42 @@ class EnterpriseRPABot:
             widget.after(flash_ms, lambda: widget.configure(highlightbackground=orig_bg, highlightthickness=orig_thick))
         except Exception:
             pass
+
+    class _BBoxWidget:
+        """Notebook sekmeleri için sanal widget"""
+
+        def __init__(self, x: int, y: int, w: int, h: int):
+            self._x = x
+            self._y = y
+            self._w = w
+            self._h = h
+
+        def winfo_rootx(self):
+            return self._x
+
+        def winfo_rooty(self):
+            return self._y
+
+        def winfo_width(self):
+            return self._w
+
+        def winfo_height(self):
+            return self._h
+
+    def get_tab_widget(self, index: int):
+        """Notebook sekme koordinatlarından sanal widget döndür"""
+        if not self.gui or not hasattr(self.gui, "notebook"):
+            return None
+        try:
+            bbox = self.gui.notebook.bbox(index)
+            if not bbox:
+                return None
+            x, y, w, h = bbox
+            rootx = self.gui.notebook.winfo_rootx() + x
+            rooty = self.gui.notebook.winfo_rooty() + y
+            return self._BBoxWidget(rootx, rooty, w, h)
+        except Exception:
+            return None
         
     def move_mouse_to_widget(self, widget, smooth: bool = True):
         """Fareyi widget'a yumuşak hareketle taşı"""
@@ -164,11 +200,8 @@ class EnterpriseRPABot:
             5: "system",
         }
 
-        def get_tab_widget(index: int):
-            return getattr(self.gui, "tabs", {}).get(tab_keys.get(index)) if hasattr(self.gui, "tabs") else None
-
         # 0 - Dashboard sekmesine tıkla
-        dashboard_widget = get_tab_widget(0)
+        dashboard_widget = self.get_tab_widget(0)
         self.click_widget_simulation("Dashboard sekmesi", dashboard_widget)
         self.call_in_gui_thread(self.gui.notebook.select, 0)
 
@@ -181,12 +214,12 @@ class EnterpriseRPABot:
         ]
 
         for idx, name in sequence:
-            widget = get_tab_widget(idx)
+            widget = self.get_tab_widget(idx)
             self.click_widget_simulation(f"{name} sekmesi", widget)
             self.call_in_gui_thread(self.gui.notebook.select, idx)
 
         # Son olarak Finans-Tahsilat(2)
-        finance_widget = get_tab_widget(2)
+        finance_widget = self.get_tab_widget(2)
         self.click_widget_simulation("Finans-Tahsilat sekmesi", finance_widget)
         self.call_in_gui_thread(self.gui.notebook.select, 2)
 
