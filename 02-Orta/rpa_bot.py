@@ -27,23 +27,46 @@ class AdvancedRPABot:
     def load_test_excel(self):
         """Test Excel dosyasini veya ornek veriyi yukle"""
         self.log_step("Test Excel verisi yükleniyor...")
-        try:
-            excel_path = Path("../data/Vadesiz_Hesap_Detay.xlsx")
-            if not excel_path.exists():
-                excel_path = Path("data/Vadesiz_Hesap_Detay.xlsx")
 
-            if excel_path.exists():
-                self.gui.data = pd.read_excel(excel_path)
-                self.gui.show_data(self.gui.data)
-                self.gui.update_summary()
-                self.log_step(f"✅ Excel yüklendi: {len(self.gui.data)} kayıt")
-                return True
-            else:
+        # 🔧 DEBUG: Excel yol kontrolü
+        excel_path = Path("../data/Vadesiz_Hesap_Detay.xlsx")
+        print(f"DEBUG: Excel path 1: {excel_path} - Exists: {excel_path.exists()}")
+
+        if not excel_path.exists():
+            excel_path = Path("data/Vadesiz_Hesap_Detay.xlsx")
+            print(f"DEBUG: Excel path 2: {excel_path} - Exists: {excel_path.exists()}")
+
+        if excel_path.exists():
+            # 🔧 DEBUG: Excel okuma
+            raw_data = pd.read_excel(excel_path)
+            print(f"DEBUG: Raw Excel shape: {raw_data.shape}")
+            print(f"DEBUG: Raw columns: {list(raw_data.columns)}")
+            print(f"DEBUG: First 3 rows:\n{raw_data.head(3)}")
+
+            # 🔧 DEBUG: GUI'ye veri atama
+            self.gui.data = raw_data
+            print(f"DEBUG: GUI data assigned: {len(self.gui.data)} rows")
+
+            # 🔧 DEBUG: show_data çağrısı
+            print("DEBUG: Calling gui.show_data()...")
+            self.gui.show_data(self.gui.data)
+            print("DEBUG: show_data() completed")
+
+            # 🔧 DEBUG: Treeview kontrol
+            tree_children = self.gui.tree.get_children()
+            print(f"DEBUG: Tree children count: {len(tree_children)}")
+
+            self.gui.update_summary()
+            self.log_step(f"✅ Excel yüklendi: {len(self.gui.data)} kayıt")
+            return True
+        else:
+            print("DEBUG: Excel not found, creating test data...")
+            try:
                 self.create_test_data()
                 return True
-        except Exception as e:
-            self.log_step(f"❌ Excel yükleme hatası: {e}")
-            return False
+            except Exception as e:
+                self.log_step(f"❌ Excel yükleme hatası: {e}")
+                return False
 
     def create_test_data(self):
         """Excel bulunamazsa ornek veri olustur"""
