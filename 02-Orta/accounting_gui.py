@@ -1,446 +1,382 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, messagebox
 import pandas as pd
-import re
-from pathlib import Path
 from datetime import datetime
 
 class AdvancedAccountingGUI:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Muhasebe Pro - Banka Hesap İzleme Sistemi")
+        self.root.title("Muhasebe Pro - Gelişmiş Sistem")
         self.root.geometry("1400x800")
-        self.root.state('zoomed')  # Tam ekran başlat
-
-        # GUI'yi merkeze al ve öne getir
+        self.root.state('zoomed')
+        
+        # Veri depolama
+        self.main_data = []  # Ana tablodaki kayıtlar
+        self.current_records = []  # Excel'den okunan kayıtlar
+        
+        # GUI'yi öne getir
         self.root.lift()
         self.root.attributes('-topmost', True)
         self.root.after(100, lambda: self.root.attributes('-topmost', False))
-
-        self.data = pd.DataFrame()
-        self.filtered_data = pd.DataFrame()
-
-        # Stil ayarları
+        
         self.setup_styles()
-        self.create_widgets()
-
+        self.create_dashboard()
+        
     def setup_styles(self):
         """Profesyonel stil ayarları"""
         style = ttk.Style()
         style.theme_use('clam')
-
-        style.configure('Header.TFrame', background='#2E4BC6')
+        
+        # Presto benzeri renkler
+        style.configure('Tab.TNotebook', tabposition='n')
+        style.configure('Tab.TNotebook.Tab', padding=[20, 10])
         style.configure('Toolbar.TFrame', background='#F0F0F0', relief='raised')
-        style.configure('Status.TFrame', background='#E0E0E0', relief='sunken')
-
-    def create_widgets(self):
-        # Ana menü çubuğu
-        self.create_menu_bar()
-
-        # Toolbar (ikon çubuğu)
-        self.create_toolbar()
-
-        # Ana çalışma alanı
-        self.create_main_area()
-
+        style.configure('Dashboard.TFrame', background='#FFFFFF')
+        
+    def create_dashboard(self):
+        """Ana dashboard ekranı"""
+        # Üst menü çubuğu
+        self.create_main_menu()
+        
+        # Sekme yapısı
+        self.create_tab_system()
+        
+        # Ana içerik alanı
+        self.create_main_content()
+        
         # Status bar
         self.create_status_bar()
-
-    def create_menu_bar(self):
+        
+    def create_main_menu(self):
         """Üst menü çubuğu"""
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
-
-        # Ana menüler
-        menus = [
-            ("Muhasebe", ["Hesap Planı", "Yevmiye", "Mizan"]),
-            ("Gider", ["Gider Fişi", "Gider Listesi"]),
-            ("Bütçe", ["Bütçe Tanımı", "Bütçe Kontrolü"]),
-            ("Finans-Ödeme", ["Ödeme Emri", "Çek Senedi"]),
-            ("Finans-Tahsilat", ["Tahsilat Fişi", "Pos Tahsilat"]),
-            ("Satış", ["Satış Faturası", "Satış Listesi"]),
-            ("Stok", ["Stok Kartı", "Stok Hareketleri"]),
-            ("Üretim", ["Üretim Emri", "Reçete"]),
-            ("Personel", ["Personel Kartı", "Bordro"]),
-            ("Diğer", ["Yedekleme", "Ayarlar"])
-        ]
-
-        for menu_name, items in menus:
+        
+        # Ana menüler - Presto benzeri
+        menus = ["Muhasebe", "Gider", "Bütçe", "Finans-Ödeme", "Finans-Tahsilat", 
+                "Satış", "Stok", "Üretim", "Personel", "Sabit Kıymet", "Hesap Tablosu", "Diğer"]
+        
+        for menu_name in menus:
             menu = tk.Menu(menubar, tearoff=0)
             menubar.add_cascade(label=menu_name, menu=menu)
-            for item in items:
-                menu.add_command(label=item, command=lambda x=item: self.menu_action(x))
-
-    def create_toolbar(self):
-        """İkon çubuğu"""
-        toolbar_frame = ttk.Frame(self.root, style='Toolbar.TFrame', height=80)
-        toolbar_frame.pack(fill='x', padx=2, pady=2)
-        toolbar_frame.pack_propagate(False)
-
-        # Büyük ikonlar için butonlar
-        buttons = [
-            ("📄 Yeni Kayıt", self.new_record),
-            ("📂 Excel Yükle", self.load_excel),
-            ("🔍 Filtrele", self.show_filter_dialog),
-            ("💾 Kaydet", self.save_data),
-            ("📊 Rapor", self.generate_report),
-            ("⚙️ Ayarlar", self.settings),
-        ]
-
-        for i, (text, command) in enumerate(buttons):
-            btn = ttk.Button(toolbar_frame, text=text, command=command, width=12)
-            btn.pack(side='left', padx=5, pady=10)
-
-    def create_main_area(self):
-        """Ana çalışma alanı"""
+            menu.add_command(label=f"{menu_name} İşlemleri", 
+                           command=lambda m=menu_name: self.menu_clicked(m))
+    
+    def create_tab_system(self):
+        """Sekme sistemi"""
+        # Ana frame
         main_frame = ttk.Frame(self.root)
-        main_frame.pack(expand=True, fill='both', padx=5, pady=5)
-
-        # Filtre alanı (üst)
-        self.create_filter_area(main_frame)
-
-        # Tablo alanı (orta)
-        self.create_table_area(main_frame)
-
-        # Özet alanı (alt)
-        self.create_summary_area(main_frame)
-
-    def create_filter_area(self, parent):
-        """Filtre kontrolları"""
-        filter_frame = ttk.LabelFrame(parent, text="Filtre ve Arama Kriterleri", padding=10)
-        filter_frame.pack(fill='x', pady=(0, 5))
-
-        # İlk satır
-        row1 = ttk.Frame(filter_frame)
-        row1.pack(fill='x', pady=2)
-
-        ttk.Label(row1, text="Başlangıç Tarihi:").pack(side='left', padx=5)
-        self.date_start = ttk.Entry(row1, width=12)
-        self.date_start.pack(side='left', padx=5)
-        self.date_start.insert(0, "01.01.2025")
-
-        ttk.Label(row1, text="Bitiş Tarihi:").pack(side='left', padx=5)
-        self.date_end = ttk.Entry(row1, width=12)
-        self.date_end.pack(side='left', padx=5)
-        self.date_end.insert(0, "31.12.2025")
-
-        ttk.Label(row1, text="Hesap No:").pack(side='left', padx=5)
-        self.account_combo = ttk.Combobox(row1, width=20, values=[
-            "6232011 - GARANTİ BANKASI",
-            "1001001 - KASA",
-            "1201001 - ALICILAR",
-            "3201001 - SATIŞLAR"
-        ])
-        self.account_combo.pack(side='left', padx=5)
-
-        # İkinci satır
-        row2 = ttk.Frame(filter_frame)
-        row2.pack(fill='x', pady=5)
-
-        ttk.Label(row2, text="Açıklama Pattern:").pack(side='left', padx=5)
-        self.pattern_var = tk.StringVar(value=r'^POSH.*\/\d{15}$')
-        self.pattern_entry = ttk.Entry(row2, textvariable=self.pattern_var, width=30)
-        self.pattern_entry.pack(side='left', padx=5)
-
-        ttk.Label(row2, text="Min Tutar:").pack(side='left', padx=5)
-        self.min_amount = ttk.Entry(row2, width=10)
-        self.min_amount.pack(side='left', padx=5)
-
-        ttk.Label(row2, text="Max Tutar:").pack(side='left', padx=5)
-        self.max_amount = ttk.Entry(row2, width=10)
-        self.max_amount.pack(side='left', padx=5)
-
-        ttk.Button(row2, text="🔍 Filtrele", command=self.apply_advanced_filter).pack(side='left', padx=10)
-        ttk.Button(row2, text="🔄 Temizle", command=self.clear_filters).pack(side='left', padx=5)
-
-    def create_table_area(self, parent):
-        """Ana tablo alanı"""
-        table_frame = ttk.Frame(parent)
-        table_frame.pack(expand=True, fill='both', pady=5)
-
-        # Treeview ile scrollbar
-        tree_frame = ttk.Frame(table_frame)
-        tree_frame.pack(expand=True, fill='both')
-
-        # Sütunlar - Professional muhasebe programı gibi çok sütunlu
-        columns = [
-            "Tarih", "Seri", "No", "Referans", "Kasa/Hesap",
-            "Kasa/Hesap Kodu", "Hesap Adı", "Borç Tutarı",
-            "Alacak Tutarı", "Döviz Türü", "Açıklama",
-            "Yevmiye No", "Vade Tarihi", "Özel Kod"
+        main_frame.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Notebook (sekmeler)
+        self.notebook = ttk.Notebook(main_frame, style='Tab.TNotebook')
+        self.notebook.pack(fill='both', expand=True)
+        
+        # Dashboard sekmesi
+        self.dashboard_frame = ttk.Frame(self.notebook, style='Dashboard.TFrame')
+        self.notebook.add(self.dashboard_frame, text="📊 Dashboard")
+        
+        # Finans-Tahsilat sekmesi
+        self.finans_frame = ttk.Frame(self.notebook, style='Dashboard.TFrame')
+        self.notebook.add(self.finans_frame, text="💰 Finans-Tahsilat")
+        
+        # Diğer sekmeler
+        for name in ["📈 Raporlar", "⚙️ Ayarlar", "📋 Yardım"]:
+            frame = ttk.Frame(self.notebook)
+            self.notebook.add(frame, text=name)
+        
+        # Sekme değişimi eventi
+        self.notebook.bind("<<NotebookTabChanged>>", self.tab_changed)
+        
+    def create_main_content(self):
+        """Ana içerik alanları"""
+        # Dashboard içeriği
+        self.create_dashboard_content()
+        
+        # Finans-Tahsilat içeriği  
+        self.create_finans_content()
+        
+    def create_dashboard_content(self):
+        """Dashboard sekmesi içeriği"""
+        # Başlık
+        title_frame = ttk.Frame(self.dashboard_frame)
+        title_frame.pack(fill='x', pady=10)
+        
+        ttk.Label(title_frame, text="🏠 Ana Dashboard", 
+                 font=('Arial', 16, 'bold')).pack(side='left')
+        
+        # Bilgi kartları
+        info_frame = ttk.Frame(self.dashboard_frame)
+        info_frame.pack(fill='x', pady=20, padx=20)
+        
+        # Kart 1: Toplam İşlemler
+        card1 = ttk.LabelFrame(info_frame, text="Toplam İşlemler", padding=20)
+        card1.pack(side='left', fill='both', expand=True, padx=10)
+        
+        self.total_transactions_label = ttk.Label(card1, text="0", 
+                                                 font=('Arial', 24, 'bold'))
+        self.total_transactions_label.pack()
+        
+        # Kart 2: Bugünkü İşlemler  
+        card2 = ttk.LabelFrame(info_frame, text="Bugünkü İşlemler", padding=20)
+        card2.pack(side='left', fill='both', expand=True, padx=10)
+        
+        self.today_transactions_label = ttk.Label(card2, text="0", 
+                                                 font=('Arial', 24, 'bold'))
+        self.today_transactions_label.pack()
+        
+        # Ana tablo (tüm kayıtlar)
+        self.create_main_table()
+        
+    def create_finans_content(self):
+        """Finans-Tahsilat sekmesi içeriği"""
+        # Başlık ve toolbar
+        header_frame = ttk.Frame(self.finans_frame)
+        header_frame.pack(fill='x', pady=10, padx=20)
+        
+        ttk.Label(header_frame, text="💰 Finans - Tahsilat İşlemleri", 
+                 font=('Arial', 14, 'bold')).pack(side='left')
+        
+        # Küçük butonlar toolbar'ı
+        toolbar_frame = ttk.Frame(self.finans_frame, style='Toolbar.TFrame', height=50)
+        toolbar_frame.pack(fill='x', padx=20, pady=5)
+        toolbar_frame.pack_propagate(False)
+        
+        # Küçük butonlar
+        buttons = [
+            ("📄 Yeni", self.new_entry),
+            ("📂 Veri Giriş", self.open_data_entry),  # ANA BUTON!
+            ("🔍 Ara", self.search_records),
+            ("📊 Filtre", self.filter_records),
+            ("🖨️ Yazdır", self.print_records),
+            ("📤 Dışa Aktar", self.export_records)
         ]
-
-        self.tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=20)
-
+        
+        for text, command in buttons:
+            btn = ttk.Button(toolbar_frame, text=text, command=command, width=12)
+            btn.pack(side='left', padx=5, pady=5)
+        
+        # Finans içerik alanı
+        content_frame = ttk.Frame(self.finans_frame)
+        content_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        
+        ttk.Label(content_frame, text="Veri Giriş butonuna tıklayarak işlemleri başlatın.", 
+                 font=('Arial', 12)).pack(pady=50)
+                 
+    def create_main_table(self):
+        """Ana kayıt tablosu"""
+        table_frame = ttk.Frame(self.dashboard_frame)
+        table_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Tablo başlığı
+        ttk.Label(table_frame, text="📋 Tüm İşlem Kayıtları", 
+                 font=('Arial', 12, 'bold')).pack(anchor='w', pady=(0, 10))
+        
+        # Treeview
+        columns = ['ID', 'Tarih', 'Açıklama', 'Tutar', 'Durum', 'Zaman']
+        self.main_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
+        
         # Sütun ayarları
-        for col in columns:
-            self.tree.heading(col, text=col, command=lambda c=col: self.sort_by_column(c))
-            if col in ["Borç Tutarı", "Alacak Tutarı"]:
-                self.tree.column(col, width=100, anchor='e')
-            elif col in ["Tarih", "Vade Tarihi"]:
-                self.tree.column(col, width=80, anchor='center')
-            elif col in ["Seri", "No"]:
-                self.tree.column(col, width=60, anchor='center')
-            else:
-                self.tree.column(col, width=120, anchor='w')
-
-        # Özel sütun genişlikleri
-        if "Açıklama" in columns:
-            self.tree.column("Açıklama", width=300)  # Daha geniş
-        if "Tarih" in columns:
-            self.tree.column("Tarih", width=100)
-        if "İşlem Tutarı" in columns:
-            self.tree.column("İşlem Tutarı", width=120)
-
-        # Scrollbar'lar
-        v_scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=self.tree.yview)
-        h_scrollbar = ttk.Scrollbar(tree_frame, orient='horizontal', command=self.tree.xview)
-        self.tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-
-        # Grid yerleştirme
-        self.tree.grid(row=0, column=0, sticky='nsew')
-        v_scrollbar.grid(row=0, column=1, sticky='ns')
-        h_scrollbar.grid(row=1, column=0, sticky='ew')
-
-        tree_frame.grid_rowconfigure(0, weight=1)
-        tree_frame.grid_columnconfigure(0, weight=1)
-
-    def create_summary_area(self, parent):
-        """Alt özet bilgiler"""
-        summary_frame = ttk.LabelFrame(parent, text="Özet Bilgiler", padding=10)
-        summary_frame.pack(fill='x', pady=(5, 0))
-
-        # Özet bilgileri için etiketler
-        info_frame = ttk.Frame(summary_frame)
-        info_frame.pack(fill='x')
-
-        self.summary_labels = {}
-        labels = [
-            ("Toplam Kayıt:", "0"),
-            ("Borç Toplamı:", "0.00 TL"),
-            ("Alacak Toplamı:", "0.00 TL"),
-            ("Net Bakiye:", "0.00 TL"),
-            ("Seçili Kayıt:", "0"),
-            ("Son Güncelleme:", datetime.now().strftime("%d.%m.%Y %H:%M"))
-        ]
-
-        for i, (label_text, value) in enumerate(labels):
-            frame = ttk.Frame(info_frame)
-            frame.pack(side='left', padx=15)
-
-            ttk.Label(frame, text=label_text, font=('Arial', 9, 'bold')).pack()
-            self.summary_labels[label_text] = ttk.Label(frame, text=value, font=('Arial', 10))
-            self.summary_labels[label_text].pack()
-
+        widths = [50, 100, 400, 120, 100, 150]
+        for i, (col, width) in enumerate(zip(columns, widths)):
+            self.main_tree.heading(col, text=col)
+            self.main_tree.column(col, width=width, anchor='center' if i in [0, 1, 4, 5] else 'w')
+        
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(table_frame, orient='vertical', command=self.main_tree.yview)
+        self.main_tree.configure(yscrollcommand=scrollbar.set)
+        
+        # Pack
+        self.main_tree.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+        
     def create_status_bar(self):
         """Alt durum çubuğu"""
-        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=25)
+        status_frame = ttk.Frame(self.root, relief='sunken', height=25)
         status_frame.pack(fill='x', side='bottom')
         status_frame.pack_propagate(False)
-
-        self.status_label = ttk.Label(status_frame, text="Hazır", font=('Arial', 9))
+        
+        self.status_label = ttk.Label(status_frame, text="Hazır - Dashboard", 
+                                     font=('Arial', 9))
         self.status_label.pack(side='left', padx=10, pady=3)
-
-        # Sağ taraf - kullanıcı bilgisi ve tarih
-        right_frame = ttk.Frame(status_frame)
-        right_frame.pack(side='right', padx=10, pady=3)
-
-        ttk.Label(right_frame, text=f"Kullanıcı: Admin | {datetime.now().strftime('%d.%m.%Y %H:%M')}",
-                 font=('Arial', 9)).pack()
-
-    # Event handler metodları
-    def menu_action(self, item):
-        self.update_status(f"Menü seçildi: {item}")
-        messagebox.showinfo("Bilgi", f"{item} özelliği henüz geliştirilmemiş.")
-
-    def new_record(self):
+        
+        # Sağ taraf
+        time_label = ttk.Label(status_frame, 
+                              text=f"Kullanıcı: Admin | {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+        time_label.pack(side='right', padx=10, pady=3)
+        
+    def tab_changed(self, event):
+        """Sekme değiştirme eventi"""
+        selected_tab = self.notebook.tab(self.notebook.select(), "text")
+        self.update_status(f"Aktif sekme: {selected_tab}")
+        
+    def menu_clicked(self, menu_name):
+        """Menü tıklama eventi"""
+        self.update_status(f"Menü seçildi: {menu_name}")
+        if menu_name == "Finans-Tahsilat":
+            self.notebook.select(1)  # Finans sekmesine geç
+        
+    def new_entry(self):
+        """Yeni kayıt"""
         self.update_status("Yeni kayıt oluşturuluyor...")
         messagebox.showinfo("Bilgi", "Yeni kayıt özelliği henüz geliştirilmemiş.")
-
-    def load_excel(self):
-        """Excel dosyası yükleme"""
-        file_path = filedialog.askopenfilename(
-            title="Excel Dosyası Seç",
-            filetypes=[("Excel dosyaları", "*.xlsx *.xls"), ("Tüm dosyalar", "*.*")]
-        )
-
-        if file_path:
-            try:
-                self.data = pd.read_excel(file_path)
-                self.show_data(self.data)
-                self.update_summary()
-                self.update_status(f"Excel yüklendi: {len(self.data)} kayıt")
-                messagebox.showinfo("Başarılı", f"{len(self.data)} kayıt yüklendi.")
-            except Exception as e:
-                messagebox.showerror("Hata", f"Excel dosyası yüklenemedi:\n{str(e)}")
-
-    def show_filter_dialog(self):
-        """Gelişmiş filtre penceresi"""
-        self.update_status("Filtre penceresi açılıyor...")
-        # Bu metodun içeriği geliştirilecek
-        messagebox.showinfo("Bilgi", "Gelişmiş filtre özelliği yakında eklenecek.")
-
-    def apply_advanced_filter(self):
-        """Gelişmiş filtreleme - dinamik sütun bulma ile"""
-        if self.data.empty:
-            messagebox.showwarning("Uyarı", "Önce Excel dosyası yükleyin.")
+        
+    def open_data_entry(self):
+        """Veri Giriş modal'ını aç - ANA FONKSİYON!"""
+        self.update_status("Veri Giriş penceresi açılıyor...")
+        
+        # Modal pencere oluştur
+        self.data_entry_window = tk.Toplevel(self.root)
+        self.data_entry_window.title("📊 Veri Giriş Sistemi")
+        self.data_entry_window.geometry("600x400")
+        self.data_entry_window.transient(self.root)
+        self.data_entry_window.grab_set()
+        
+        # Modal içeriği
+        self.create_data_entry_modal()
+        
+    def create_data_entry_modal(self):
+        """Veri giriş modal içeriği"""
+        modal = self.data_entry_window
+        
+        # Başlık
+        title_frame = ttk.Frame(modal)
+        title_frame.pack(fill='x', pady=10, padx=20)
+        
+        ttk.Label(title_frame, text="📊 Veri Giriş Formu", 
+                 font=('Arial', 14, 'bold')).pack()
+        
+        # Form alanları
+        form_frame = ttk.LabelFrame(modal, text="İşlem Bilgileri", padding=20)
+        form_frame.pack(fill='x', pady=20, padx=20)
+        
+        # Tarih
+        ttk.Label(form_frame, text="📅 Tarih:").grid(row=0, column=0, sticky='w', pady=5)
+        self.date_entry = ttk.Entry(form_frame, width=30, font=('Arial', 11))
+        self.date_entry.grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
+        
+        # Açıklama
+        ttk.Label(form_frame, text="📝 Açıklama:").grid(row=1, column=0, sticky='w', pady=5)
+        self.desc_entry = ttk.Entry(form_frame, width=30, font=('Arial', 11))
+        self.desc_entry.grid(row=1, column=1, sticky='ew', pady=5, padx=(10, 0))
+        
+        # Tutar
+        ttk.Label(form_frame, text="💰 Tutar:").grid(row=2, column=0, sticky='w', pady=5)
+        self.amount_entry = ttk.Entry(form_frame, width=30, font=('Arial', 11))
+        self.amount_entry.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
+        
+        form_frame.columnconfigure(1, weight=1)
+        
+        # Butonlar
+        button_frame = ttk.Frame(modal)
+        button_frame.pack(fill='x', pady=20, padx=20)
+        
+        self.save_btn = ttk.Button(button_frame, text="💾 Kaydet", 
+                                  command=self.save_current_record, width=15)
+        self.save_btn.pack(side='left', padx=5)
+        
+        self.clear_btn = ttk.Button(button_frame, text="🧹 Temizle", 
+                                   command=self.clear_form, width=15)
+        self.clear_btn.pack(side='left', padx=5)
+        
+        ttk.Button(button_frame, text="❌ Kapat", 
+                  command=modal.destroy, width=15).pack(side='right', padx=5)
+        
+        # Durum
+        self.modal_status = ttk.Label(modal, text="Form hazır - veri girişi bekleniyor...", 
+                                     font=('Arial', 9), foreground='blue')
+        self.modal_status.pack(pady=10)
+        
+    def save_current_record(self):
+        """Mevcut kaydı kaydet"""
+        # Form verilerini al
+        date_val = self.date_entry.get().strip()
+        desc_val = self.desc_entry.get().strip()
+        amount_val = self.amount_entry.get().strip()
+        
+        if not all([date_val, desc_val, amount_val]):
+            messagebox.showwarning("Uyarı", "Lütfen tüm alanları doldurun!")
             return
-
+            
         try:
-            filtered = self.data.copy()
-
-            # Açıklama sütununu dinamik bul
-            aciklama_cols = [col for col in filtered.columns if 'açıklama' in str(col).lower()]
-            if aciklama_cols:
-                aciklama_col = aciklama_cols[0]
-                pattern = self.pattern_var.get().strip()
-                if pattern:
-                    filtered = filtered[filtered[aciklama_col].str.match(pattern, na=False)]
-
-            # Tutar sütununu dinamik bul
-            tutar_cols = [col for col in filtered.columns if 'tutar' in str(col).lower()]
-            if tutar_cols:
-                tutar_col = tutar_cols[0]
-                min_val = self.min_amount.get().strip()
-                max_val = self.max_amount.get().strip()
-
-                if min_val:
-                    filtered = filtered[filtered[tutar_col] >= float(min_val)]
-                if max_val:
-                    filtered = filtered[filtered[tutar_col] <= float(max_val)]
-
-            self.filtered_data = filtered
-            self.show_data(filtered)
-            self.update_summary()
-            self.update_status(f"Filtre uygulandı: {len(filtered)} kayıt")
-
-        except Exception as e:
-            messagebox.showerror("Hata", f"Filtreleme hatası:\n{str(e)}")
-
-    def clear_filters(self):
-        """Filtreleri temizle"""
-        self.pattern_var.set(r'^POSH.*\/\d{15}$')
-        self.min_amount.delete(0, tk.END)
-        self.max_amount.delete(0, tk.END)
-        self.account_combo.set('')
-
-        if not self.data.empty:
-            self.show_data(self.data)
-            self.update_summary()
-
-        self.update_status("Filtreler temizlendi")
-
-    def show_data(self, df):
-        """Veriyi tabloda göster - debug ve düzeltme ile"""
-        print(f"SHOW_DATA DEBUG: DataFrame shape: {df.shape}")
-        print(f"SHOW_DATA DEBUG: DF Columns: {list(df.columns)}")
-        print(f"SHOW_DATA DEBUG: Tree columns: {self.tree['columns']}")
-
-        # Mevcut verileri temizle
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
-        if df.empty:
-            print("SHOW_DATA DEBUG: DataFrame is empty")
+            amount_float = float(amount_val.replace(',', '.'))
+        except ValueError:
+            messagebox.showerror("Hata", "Geçersiz tutar formatı!")
             return
-
-        # NaN değerleri temizle
-        df_clean = df.fillna('')
-
-        # Verileri tabloya ekle - sütun uyumunu düzelt
-        for index, row in df_clean.iterrows():
-            values = []
-
-            # Excel sütunlarını GUI sütunlarına map et
-            gui_columns = self.tree['columns']
-
-            # Excel'deki ilk 3 sütunu kullan
-            if len(df_clean.columns) >= 3:
-                values.append(str(row.iloc[0]))  # Tarih
-                values.append('')  # Seri
-                values.append('')  # No
-                values.append('')  # Referans
-                values.append('')  # Kasa/Hesap
-                values.append('')  # Kasa/Hesap Kodu
-                values.append('')  # Hesap Adı
-                values.append('')  # Borç Tutarı
-                values.append('')  # Alacak Tutarı
-                values.append('')  # Döviz Türü
-                values.append(str(row.iloc[2]) if len(df_clean.columns) > 2 else '')  # Açıklama
-                values.append('')  # Yevmiye No
-                values.append('')  # Vade Tarihi
-                values.append(str(row.iloc[3]) if len(df_clean.columns) > 3 else '')  # Özel Kod (Tutar)
-
-            # 14 sütuna tamamla
-            while len(values) < len(gui_columns):
-                values.append('')
-
-            print(f"SHOW_DATA DEBUG: Inserting row {index}: {values[:3]}...")
-            self.tree.insert('', 'end', values=values)
-
-        tree_children = self.gui.tree.get_children()
-        print(f"SHOW_DATA DEBUG: Final tree children: {len(tree_children)}")
-
-    def update_summary(self):
-        """Özet bilgileri güncelle"""
-        if hasattr(self, 'filtered_data') and not self.filtered_data.empty:
-            data = self.filtered_data
-        else:
-            data = self.data
-
-        if data.empty:
-            return
-
-        # Temel istatistikler
-        total_records = len(data)
-
-        # Tutar sütununu dinamik bul
-        tutar_cols = [col for col in data.columns if 'tutar' in str(col).lower()]
-        if tutar_cols:
-            tutar_col = tutar_cols[0]
-            positive_sum = data[data[tutar_col] > 0][tutar_col].sum()
-            negative_sum = abs(data[data[tutar_col] < 0][tutar_col].sum())
-            net_balance = data[tutar_col].sum()
-
-            self.summary_labels["Borç Toplamı:"].config(text=f"{positive_sum:,.2f} TL")
-            self.summary_labels["Alacak Toplamı:"].config(text=f"{negative_sum:,.2f} TL")
-            self.summary_labels["Net Bakiye:"].config(text=f"{net_balance:,.2f} TL")
-        else:
-            self.summary_labels["Borç Toplamı:"].config(text="0.00 TL")
-            self.summary_labels["Alacak Toplamı:"].config(text="0.00 TL")
-            self.summary_labels["Net Bakiye:"].config(text="0.00 TL")
-
-        self.summary_labels["Toplam Kayıt:"].config(text=str(total_records))
-        self.summary_labels["Son Güncelleme:"].config(text=datetime.now().strftime("%d.%m.%Y %H:%M"))
-
-    def sort_by_column(self, col):
-        """Sütuna göre sıralama"""
-        self.update_status(f"Sıralanıyor: {col}")
-        # Sıralama özelliği geliştirilecek
-
-    def save_data(self):
-        self.update_status("Veriler kaydediliyor...")
-        messagebox.showinfo("Bilgi", "Kaydetme özelliği henüz geliştirilmemiş.")
-
-    def generate_report(self):
-        self.update_status("Rapor oluşturuluyor...")
-        messagebox.showinfo("Bilgi", "Rapor özelliği henüz geliştirilmemiş.")
-
-    def settings(self):
-        self.update_status("Ayarlar açılıyor...")
-        messagebox.showinfo("Bilgi", "Ayarlar penceresi henüz geliştirilmemiş.")
-
+            
+        # Ana tabloya ekle
+        record_id = len(self.main_data) + 1
+        timestamp = datetime.now().strftime('%H:%M:%S')
+        
+        self.main_data.append({
+            'id': record_id,
+            'date': date_val,
+            'description': desc_val,
+            'amount': amount_float,
+            'status': 'Kaydedildi',
+            'time': timestamp
+        })
+        
+        # Ana tabloyu güncelle
+        self.main_tree.insert('', 'end', values=[
+            record_id, date_val, desc_val, f"{amount_float:.2f} TL", 
+            'Kaydedildi', timestamp
+        ])
+        
+        # Dashboard'u güncelle
+        self.update_dashboard_stats()
+        
+        # Form temizle
+        self.clear_form()
+        
+        # Durum güncellemesi
+        self.modal_status.config(text=f"✅ Kayıt {record_id} başarıyla kaydedildi!", 
+                                foreground='green')
+        self.update_status(f"Yeni kayıt eklendi: ID {record_id}")
+        
+    def clear_form(self):
+        """Formu temizle"""
+        self.date_entry.delete(0, tk.END)
+        self.desc_entry.delete(0, tk.END)
+        self.amount_entry.delete(0, tk.END)
+        self.modal_status.config(text="Form temizlendi - yeni veri girişi hazır", 
+                                foreground='blue')
+        
+    def update_dashboard_stats(self):
+        """Dashboard istatistiklerini güncelle"""
+        total = len(self.main_data)
+        today = len([r for r in self.main_data if r['date'] == datetime.now().strftime('%d.%m.%Y')])
+        
+        self.total_transactions_label.config(text=str(total))
+        self.today_transactions_label.config(text=str(today))
+        
+    def search_records(self):
+        """Kayıt arama"""
+        self.update_status("Arama özelliği henüz geliştirilmemiş.")
+        
+    def filter_records(self):
+        """Kayıt filtreleme"""
+        self.update_status("Filtreleme özelliği henüz geliştirilmemiş.")
+        
+    def print_records(self):
+        """Kayıtları yazdır"""
+        self.update_status("Yazdırma özelliği henüz geliştirilmemiş.")
+        
+    def export_records(self):
+        """Kayıtları dışa aktar"""
+        self.update_status("Dışa aktarma özelliği henüz geliştirilmemiş.")
+        
     def update_status(self, message):
         """Durum çubuğunu güncelle"""
         self.status_label.config(text=message)
         self.root.update_idletasks()
-
+        
     def run(self):
         """Uygulamayı çalıştır"""
-        self.update_status("Muhasebe Pro Hazır")
+        self.update_status("Muhasebe Pro Hazır - Dashboard")
         self.root.mainloop()
 
-# Test için
+# Test
 if __name__ == "__main__":
     app = AdvancedAccountingGUI()
     app.run()

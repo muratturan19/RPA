@@ -2,235 +2,199 @@ import time
 import threading
 import pandas as pd
 from pathlib import Path
-
+import tkinter as tk
 
 class AdvancedRPABot:
-    """Otomasyon adimlarini yurutmek icin gelismis RPA botu."""
-
+    """Gerçekçi RPA botu - Presto benzeri akış"""
+    
     def __init__(self):
         self.gui = None
         self.is_running = False
-        self.current_step = ""
-
+        self.excel_data = []
+        self.current_record_index = 0
+        
     def set_gui_reference(self, gui_app):
-        """GUI referansini ayarla"""
+        """GUI referansını ayarla"""
         self.gui = gui_app
         print("✅ GUI referansı ayarlandı")
-
-    def log_step(self, message):
-        """Her adimi logla ve GUI uzerinden durumu guncelle"""
-        self.current_step = message
+        
+    def log_step(self, message, delay=1):
+        """Adımları logla ve bekle"""
         print(f"[RPA] {message}")
         if self.gui:
             self.gui.update_status(f"RPA: {message}")
-
-    def load_test_excel(self):
-        """Test Excel dosyasini veya ornek veriyi yukle"""
-        self.log_step("Test Excel verisi yükleniyor...")
-
-        # 🔧 DEBUG: Excel yol kontrolü
-        excel_path = Path("../data/Vadesiz_Hesap_Detay.xlsx")
-        print(f"DEBUG: Excel path 1: {excel_path} - Exists: {excel_path.exists()}")
-
-        if not excel_path.exists():
-            excel_path = Path("data/Vadesiz_Hesap_Detay.xlsx")
-            print(f"DEBUG: Excel path 2: {excel_path} - Exists: {excel_path.exists()}")
-
-        if excel_path.exists():
-            # 🔧 DEBUG: Excel okuma
-            raw_data = pd.read_excel(excel_path)
-            print(f"DEBUG: Raw Excel shape: {raw_data.shape}")
-            print(f"DEBUG: Raw columns: {list(raw_data.columns)}")
-            print(f"DEBUG: First 3 rows:\n{raw_data.head(3)}")
-
-            # 🔧 DEBUG: GUI'ye veri atama
-            self.gui.data = raw_data
-            print(f"DEBUG: GUI data assigned: {len(self.gui.data)} rows")
-
-            # 🔧 DEBUG: show_data çağrısı
-            print("DEBUG: Calling gui.show_data()...")
-            self.gui.show_data(self.gui.data)
-            print("DEBUG: show_data() completed")
-
-            # 🔧 DEBUG: Treeview kontrol
-            tree_children = self.gui.tree.get_children()
-            print(f"DEBUG: Tree children count: {len(tree_children)}")
-
-            self.gui.update_summary()
-            self.log_step(f"✅ Excel yüklendi: {len(self.gui.data)} kayıt")
-            return True
-        else:
-            print("DEBUG: Excel not found, creating test data...")
-            try:
-                self.create_test_data()
-                return True
-            except Exception as e:
-                self.log_step(f"❌ Excel yükleme hatası: {e}")
-                return False
-
-    def create_test_data(self):
-        """Excel bulunamazsa ornek veri olustur"""
-        self.log_step("Test verisi oluşturuluyor...")
-        test_data = pd.DataFrame([
-            {
-                "Tarih": "23.07.2025",
-                "Açıklama": "POSH/20250723/000000002391280/N042 K P POS Satış /000001660659421",
-                "Tutar": 670.99,
-            },
-            {
-                "Tarih": "23.07.2025",
-                "Açıklama": "POSH/20250723/000000002391280/N042 K P ÜİY Komisyon /000001660659421",
-                "Tutar": -13.42,
-            },
-            {
-                "Tarih": "23.07.2025",
-                "Açıklama": "POSH/20250723/000000002391280/TY01 N P POS Satış /000001660659422",
-                "Tutar": 307.49,
-            },
-            {
-                "Tarih": "23.07.2025",
-                "Açıklama": "POSH/20250723/000000002391280/TY01 N P ÜİY Komisyon /000001660659422",
-                "Tutar": -8.46,
-            },
-            {
-                "Tarih": "23.07.2025",
-                "Açıklama": "POSH/20250723/000000002391280 MUSLUOĞLU BAKLAVA4",
-                "Tutar": -41563.5,
-            },
-            {
-                "Tarih": "24.07.2025",
-                "Açıklama": "POSH/20250724/000000002391280/N001 N P POS Satış /000001661601485",
-                "Tutar": 4559.47,
-            },
-        ])
-        self.gui.data = test_data
-        self.gui.show_data(test_data)
-        self.gui.update_summary()
-        self.log_step(f"✅ Test verisi oluşturuldu: {len(test_data)} kayıt")
-
-    def set_pattern_filter(self, pattern):
-        """Desen filtresini ayarla"""
-        self.log_step(f"Pattern ayarlanıyor: {pattern}")
-        self.gui.pattern_var.set(pattern)
-        time.sleep(1.5)
-        self.log_step("✅ Pattern ayarlandı")
-
-    def set_amount_filters(self, min_amount=None, max_amount=None):
-        """Tutar filtrelerini ayarla"""
-        if min_amount is not None:
-            self.log_step(f"Min tutar ayarlanıyor: {min_amount}")
-            self.gui.min_amount.delete(0, "end")
-            self.gui.min_amount.insert(0, str(min_amount))
-            time.sleep(0.9)
-        if max_amount is not None:
-            self.log_step(f"Max tutar ayarlanıyor: {max_amount}")
-            self.gui.max_amount.delete(0, "end")
-            self.gui.max_amount.insert(0, str(max_amount))
-            time.sleep(0.9)
-
-    def select_account(self, account):
-        """Hesap secimi yap"""
-        self.log_step(f"Hesap seçiliyor: {account}")
-        self.gui.account_combo.set(account)
-        time.sleep(1.5)
-        self.log_step("✅ Hesap seçildi")
-
-    def apply_filters(self):
-        """Filtreleri uygula"""
-        self.log_step("Filtreler uygulanıyor...")
+        time.sleep(delay)
+        
+    def click_simulation(self, widget_name, delay=1):
+        """Widget tıklama simülasyonu"""
+        self.log_step(f"🖱️ {widget_name} tıklanıyor...", 0.5)
+        time.sleep(delay)
+        self.log_step(f"✅ {widget_name} tıklandı", 0.5)
+        
+    def navigate_to_finans_tab(self):
+        """Finans-Tahsilat sekmesine git"""
+        self.log_step("📊 Finans-Tahsilat sekmesine geçiliyor...", 2)
+        
+        # GUI'de sekmeye geç
+        self.gui.notebook.select(1)  # Index 1 = Finans-Tahsilat
+        self.log_step("✅ Finans-Tahsilat sekmesi açıldı", 1)
+        
+    def click_data_entry_button(self):
+        """Veri Giriş butonuna tıkla"""
+        self.log_step("📋 Üstteki 'Veri Giriş' butonuna tıklanıyor...", 2)
+        
+        # Veri Giriş modal'ını aç
+        self.gui.open_data_entry()
+        self.log_step("✅ Veri Giriş penceresi açıldı", 2)
+        
+    def load_excel_data(self):
+        """Excel'den veri yükle"""
+        self.log_step("📂 Excel dosyasından veriler okunuyor...", 2)
+        
         try:
-            self.gui.apply_advanced_filter()
-            time.sleep(3)
-            if hasattr(self.gui, "filtered_data") and not self.gui.filtered_data.empty:
-                filtered_count = len(self.gui.filtered_data)
-            else:
-                filtered_count = 0
-            self.log_step(f"✅ Filtre uygulandı: {filtered_count} kayıt bulundu")
-            return filtered_count
+            # Excel dosyasını bul
+            excel_path = Path("../data/Vadesiz_Hesap_Detay.xlsx")
+            if not excel_path.exists():
+                excel_path = Path("data/Vadesiz_Hesap_Detay.xlsx")
+                
+            if excel_path.exists():
+                # Excel'i header satırından oku
+                raw_data = pd.read_excel(excel_path, header=23)
+                
+                # POSH pattern'i ile filtrele
+                pattern = r'^POSH.*\/\d{15}$'
+                
+                # Açıklama sütununu bul
+                aciklama_cols = [col for col in raw_data.columns if 'açıklama' in str(col).lower()]
+                if aciklama_cols:
+                    aciklama_col = aciklama_cols[0]
+                    filtered_data = raw_data[raw_data[aciklama_col].astype(str).str.match(pattern, na=False)]
+                    
+                    # Veriyi işle
+                    for _, row in filtered_data.iterrows():
+                        tarih = str(row.iloc[0]) if len(row) > 0 else ""
+                        aciklama = str(row[aciklama_col]) if pd.notna(row[aciklama_col]) else ""
+                        tutar = str(row.iloc[3]) if len(row) > 3 else "0"
+                        
+                        self.excel_data.append({
+                            'tarih': tarih,
+                            'aciklama': aciklama,
+                            'tutar': tutar
+                        })
+                        
+                    self.log_step(f"✅ {len(self.excel_data)} adet geçerli kayıt bulundu", 1)
+                    return True
+                    
+            # Excel bulunamazsa test verisi oluştur
+            self.create_test_data()
+            return True
+            
         except Exception as e:
-            self.log_step(f"❌ Filtre hatası: {e}")
-            return 0
-
-    def clear_all_filters(self):
-        """Tum filtreleri temizle"""
-        self.log_step("Filtreler temizleniyor...")
-        self.gui.clear_filters()
-        time.sleep(1.5)
-        self.log_step("✅ Filtreler temizlendi")
-
-    def analyze_results(self):
-        """Filtrelenmis verileri analiz et"""
-        self.log_step("Sonuçlar analiz ediliyor...")
-        if hasattr(self.gui, "filtered_data") and not self.gui.filtered_data.empty:
-            data = self.gui.filtered_data
-        else:
-            data = self.gui.data
-        if data.empty:
-            self.log_step("❌ Analiz edilecek veri yok")
-            return
-        total_records = len(data)
-        if "Tutar" in data.columns:
-            positive_sum = data[data["Tutar"] > 0]["Tutar"].sum()
-            negative_sum = data[data["Tutar"] < 0]["Tutar"].sum()
-            net_balance = data["Tutar"].sum()
-            self.log_step(f"📊 Analiz: {total_records} kayıt")
-            self.log_step(f"💰 Pozitif: {positive_sum:,.2f} TL")
-            self.log_step(f"💸 Negatif: {negative_sum:,.2f} TL")
-            self.log_step(f"📈 Net: {net_balance:,.2f} TL")
-        if "Açıklama" in data.columns:
-            pos_count = len(data[data["Açıklama"].str.contains("POS Satış", na=False)])
-            komisyon_count = len(data[data["Açıklama"].str.contains("ÜİY Komisyon", na=False)])
-            musluoglu_count = len(data[data["Açıklama"].str.contains("MUSLUOĞLU", na=False)])
-            self.log_step(f"🏪 POS Satış: {pos_count} adet")
-            self.log_step(f"💸 ÜİY Komisyon: {komisyon_count} adet")
-            self.log_step(f"🚫 MUSLUOĞLU (hariç): {musluoglu_count} adet")
-
+            self.log_step(f"❌ Excel okuma hatası: {e}", 1)
+            self.create_test_data()
+            return True
+            
+    def create_test_data(self):
+        """Test verisi oluştur"""
+        self.log_step("🧪 Test verisi oluşturuluyor...", 1)
+        
+        test_records = [
+            {"tarih": "23.07.2025", "aciklama": "POSH/20250723/000000002391280/N042 K P POS Satış /000001660659421", "tutar": "670.99"},
+            {"tarih": "23.07.2025", "aciklama": "POSH/20250723/000000002391280/N042 K P ÜİY Komisyon /000001660659421", "tutar": "-13.42"},
+            {"tarih": "23.07.2025", "aciklama": "POSH/20250723/000000002391280/TY01 N P POS Satış /000001660659422", "tutar": "307.49"},
+            {"tarih": "23.07.2025", "aciklama": "POSH/20250723/000000002391280/TY01 N P ÜİY Komisyon /000001660659422", "tutar": "-8.46"},
+            {"tarih": "24.07.2025", "aciklama": "POSH/20250724/000000002391280/N001 N P POS Satış /000001661601485", "tutar": "4559.47"},
+        ]
+        
+        self.excel_data = test_records
+        self.log_step(f"✅ {len(self.excel_data)} test kaydı hazırlandı", 1)
+        
+    def process_single_record(self, record):
+        """Tek kaydı işle - Form doldur ve kaydet"""
+        self.log_step(f"📝 Kayıt işleniyor: {record['aciklama'][:50]}...", 1)
+        
+        # 1. Tarih alanına tıkla ve veri gir
+        self.click_simulation("Tarih alanı")
+        self.gui.date_entry.delete(0, tk.END)
+        self.gui.date_entry.insert(0, record['tarih'])
+        self.log_step(f"📅 Tarih girildi: {record['tarih']}", 1)
+        
+        # 2. Açıklama alanına tıkla ve veri gir
+        self.click_simulation("Açıklama alanı")
+        self.gui.desc_entry.delete(0, tk.END)
+        
+        # Açıklamayı kısalt
+        short_desc = record['aciklama'][:80] + "..." if len(record['aciklama']) > 80 else record['aciklama']
+        self.gui.desc_entry.insert(0, short_desc)
+        self.log_step(f"📝 Açıklama girildi: {short_desc[:30]}...", 1)
+        
+        # 3. Tutar alanına tıkla ve veri gir
+        self.click_simulation("Tutar alanı")
+        self.gui.amount_entry.delete(0, tk.END)
+        self.gui.amount_entry.insert(0, record['tutar'])
+        self.log_step(f"💰 Tutar girildi: {record['tutar']} TL", 1)
+        
+        # 4. Kaydet butonuna tıkla
+        self.click_simulation("Kaydet butonu", 2)
+        self.gui.save_current_record()
+        self.log_step("✅ Kayıt başarıyla kaydedildi", 1)
+        
+        # 5. Kısa bekleme
+        self.log_step("⏳ Sonraki kayıt için hazırlanıyor...", 1.5)
+        
     def run_automation_sequence(self):
-        """Tum otomasyon adimlarini calistir"""
-        self.log_step("🤖 RPA Otomasyonu başlatılıyor...")
-        if not self.load_test_excel():
-            return
-        time.sleep(3)
-        self.log_step("--- TEST 1: Doğru POSH Pattern ---")
-        self.set_pattern_filter(r"^POSH.*\/\d{15}$")
-        result1 = self.apply_filters()
-        self.analyze_results()
-        time.sleep(6)
-        self.log_step("--- TEST 2: MUSLUOĞLU Hariç Pattern ---")
-        self.clear_all_filters()
-        self.set_pattern_filter(r"^POSH(?!.*MUSLUOĞLU).*\/\d{15}$")
-        result2 = self.apply_filters()
-        self.analyze_results()
-        time.sleep(6)
-        self.log_step("--- TEST 3: Tutar Filtreleri ---")
-        self.clear_all_filters()
-        self.set_pattern_filter(r"^POSH.*\/\d{15}$")
-        self.set_amount_filters(min_amount=100, max_amount=5000)
-        result3 = self.apply_filters()
-        self.analyze_results()
-        time.sleep(6)
-        self.log_step("--- TEST 4: Hesap Seçimi ---")
-        self.select_account("6232011 - GARANTİ BANKASI")
-        time.sleep(3)
-        self.log_step("🎉 RPA Otomasyonu tamamlandı!")
-        self.log_step(f"📊 Test sonuçları: {result1}/{result2}/{result3} kayıt")
-
+        """Ana otomasyon sekansı"""
+        self.log_step("🤖 RPA Otomasyonu başlatılıyor...", 2)
+        
+        try:
+            # 1. Finans sekmesine git
+            self.navigate_to_finans_tab()
+            
+            # 2. Veri Giriş butonuna tıkla
+            self.click_data_entry_button()
+            
+            # 3. Excel verilerini yükle
+            if not self.load_excel_data():
+                self.log_step("❌ Veri yüklenemedi, işlem durduruluyor", 1)
+                return
+                
+            # 4. Her kayıt için döngü
+            total_records = len(self.excel_data)
+            self.log_step(f"🔄 {total_records} kayıt işlenecek", 2)
+            
+            for i, record in enumerate(self.excel_data, 1):
+                self.log_step(f"--- İŞLEM {i}/{total_records} ---", 1)
+                
+                # Kaydı işle
+                self.process_single_record(record)
+                
+                # İlerleme raporu
+                if i % 5 == 0:
+                    self.log_step(f"📊 İlerleme: {i}/{total_records} kayıt tamamlandı", 1)
+                    
+            # Tamamlandı
+            self.log_step("🎉 TÜM KAYITLAR BAŞARIYLA İŞLENDİ!", 3)
+            self.log_step(f"📈 Sonuç: {total_records} kayıt ana tabloya eklendi", 1)
+            
+        except Exception as e:
+            self.log_step(f"❌ RPA Sistemi Hatası: {e}", 1)
+            
     def run(self):
-        """RPA'yi thread uzerinde calistir"""
+        """RPA'yi threading ile çalıştır"""
         if not self.gui:
             print("❌ GUI referansı ayarlanmamış!")
             return
+            
         self.is_running = True
-
+        
         def automation_worker():
             try:
                 self.run_automation_sequence()
             except Exception as e:
-                self.log_step(f"❌ RPA Hatası: {e}")
+                self.log_step(f"❌ RPA Sistemi Hatası: {e}")
             finally:
                 self.is_running = False
-
+                
         thread = threading.Thread(target=automation_worker, daemon=True)
         thread.start()
         return thread
-
