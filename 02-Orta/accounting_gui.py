@@ -179,6 +179,14 @@ class AdvancedAccountingGUI:
             else:
                 self.tree.column(col, width=120, anchor='w')
 
+        # Özel sütun genişlikleri
+        if "Açıklama" in columns:
+            self.tree.column("Açıklama", width=300)  # Daha geniş
+        if "Tarih" in columns:
+            self.tree.column("Tarih", width=100)
+        if "İşlem Tutarı" in columns:
+            self.tree.column("İşlem Tutarı", width=120)
+
         # Scrollbar'lar
         v_scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=self.tree.yview)
         h_scrollbar = ttk.Scrollbar(tree_frame, orient='horizontal', command=self.tree.xview)

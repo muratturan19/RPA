@@ -112,7 +112,7 @@ class AdvancedRPABot:
         """Desen filtresini ayarla"""
         self.log_step(f"Pattern ayarlanıyor: {pattern}")
         self.gui.pattern_var.set(pattern)
-        time.sleep(0.5)
+        time.sleep(1.5)
         self.log_step("✅ Pattern ayarlandı")
 
     def set_amount_filters(self, min_amount=None, max_amount=None):
@@ -121,18 +121,18 @@ class AdvancedRPABot:
             self.log_step(f"Min tutar ayarlanıyor: {min_amount}")
             self.gui.min_amount.delete(0, "end")
             self.gui.min_amount.insert(0, str(min_amount))
-            time.sleep(0.3)
+            time.sleep(0.9)
         if max_amount is not None:
             self.log_step(f"Max tutar ayarlanıyor: {max_amount}")
             self.gui.max_amount.delete(0, "end")
             self.gui.max_amount.insert(0, str(max_amount))
-            time.sleep(0.3)
+            time.sleep(0.9)
 
     def select_account(self, account):
         """Hesap secimi yap"""
         self.log_step(f"Hesap seçiliyor: {account}")
         self.gui.account_combo.set(account)
-        time.sleep(0.5)
+        time.sleep(1.5)
         self.log_step("✅ Hesap seçildi")
 
     def apply_filters(self):
@@ -140,7 +140,7 @@ class AdvancedRPABot:
         self.log_step("Filtreler uygulanıyor...")
         try:
             self.gui.apply_advanced_filter()
-            time.sleep(1)
+            time.sleep(3)
             if hasattr(self.gui, "filtered_data") and not self.gui.filtered_data.empty:
                 filtered_count = len(self.gui.filtered_data)
             else:
@@ -155,7 +155,7 @@ class AdvancedRPABot:
         """Tum filtreleri temizle"""
         self.log_step("Filtreler temizleniyor...")
         self.gui.clear_filters()
-        time.sleep(0.5)
+        time.sleep(1.5)
         self.log_step("✅ Filtreler temizlendi")
 
     def analyze_results(self):
@@ -190,28 +190,28 @@ class AdvancedRPABot:
         self.log_step("🤖 RPA Otomasyonu başlatılıyor...")
         if not self.load_test_excel():
             return
-        time.sleep(1)
+        time.sleep(3)
         self.log_step("--- TEST 1: Doğru POSH Pattern ---")
         self.set_pattern_filter(r"^POSH.*\/\d{15}$")
         result1 = self.apply_filters()
         self.analyze_results()
-        time.sleep(2)
+        time.sleep(6)
         self.log_step("--- TEST 2: MUSLUOĞLU Hariç Pattern ---")
         self.clear_all_filters()
         self.set_pattern_filter(r"^POSH(?!.*MUSLUOĞLU).*\/\d{15}$")
         result2 = self.apply_filters()
         self.analyze_results()
-        time.sleep(2)
+        time.sleep(6)
         self.log_step("--- TEST 3: Tutar Filtreleri ---")
         self.clear_all_filters()
         self.set_pattern_filter(r"^POSH.*\/\d{15}$")
         self.set_amount_filters(min_amount=100, max_amount=5000)
         result3 = self.apply_filters()
         self.analyze_results()
-        time.sleep(2)
+        time.sleep(6)
         self.log_step("--- TEST 4: Hesap Seçimi ---")
         self.select_account("6232011 - GARANTİ BANKASI")
-        time.sleep(1)
+        time.sleep(3)
         self.log_step("🎉 RPA Otomasyonu tamamlandı!")
         self.log_step(f"📊 Test sonuçları: {result1}/{result2}/{result3} kayıt")
 
