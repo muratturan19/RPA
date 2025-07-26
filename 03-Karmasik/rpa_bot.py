@@ -532,14 +532,13 @@ class EnterpriseRPABot:
         self.log_step(f"✅ {file_name} dosyasının tüm kayıtları işlendi", 1.0)
         
     def process_single_record(self, record: Dict, record_num: int, total: int) -> bool:
-        """Düzeltilmiş tek kayıt işleme"""
+        """DÜZELTME: Mouse hareketleri ile kayıt işleme"""
         try:
-            # Önce modal'ın hazır olduğundan emin ol
+            # Modal'ın hazır olduğundan emin ol
             if not self.wait_for_modal_ready(5):
                 self.log_step("⚠️ Modal form hazır değil, kayıt atlanıyor", 0.5)
                 return False
 
-            # Modal formunu bul
             modal_entries = self.find_modal_form()
             if not modal_entries:
                 self.log_step("⚠️ Modal form bulunamadı, kayıt atlanıyor", 0.5)
@@ -547,25 +546,44 @@ class EnterpriseRPABot:
 
             entries = modal_entries
 
-            # 1. Tarih alanı
+            # 1. MOUSE HAREKETİ + Tarih alanı
             self.log_step(f"📅 Tarih giriliyor: {record['tarih']}", 0.3)
+            self.click_widget_simulation("Tarih alanı", entries.get('date_entry'), delay=0.3)
             self.call_in_gui_thread(self.fill_entry_field, entries['date_entry'], record['tarih'])
 
-            # 2. Açıklama alanı
+            # 2. MOUSE HAREKETİ + Açıklama alanı
             short_desc = record['aciklama'][:80] + "..." if len(record['aciklama']) > 80 else record['aciklama']
             self.log_step(f"📝 Açıklama giriliyor: {short_desc[:30]}...", 0.3)
+            self.click_widget_simulation("Açıklama alanı", entries.get('desc_entry'), delay=0.3)
             self.call_in_gui_thread(self.fill_entry_field, entries['desc_entry'], short_desc)
 
-            # 3. Tutar alanı
+            # 3. MOUSE HAREKETİ + Tutar alanı
             self.log_step(f"💰 Tutar giriliyor: {record['tutar']}", 0.3)
+            self.click_widget_simulation("Tutar alanı", entries.get('amount_entry'), delay=0.3)
             self.call_in_gui_thread(self.fill_entry_field, entries['amount_entry'], record['tutar'])
 
-            # 4. Dosya alanı
+            # 4. MOUSE HAREKETİ + Dosya alanı
             self.log_step(f"📁 Dosya adı giriliyor: {record['dosya']}", 0.3)
+            self.click_widget_simulation("Dosya alanı", entries.get('file_entry'), delay=0.3)
             self.call_in_gui_thread(self.fill_entry_field, entries['file_entry'], record['dosya'])
 
-            # 5. Kaydet butonu - Modal'ın save fonksiyonunu çağır
+            # 5. MOUSE HAREKETİ + Kaydet butonu (Save butonunu bul)
             self.log_step("💾 Kayıt kaydediliyor...", 0.5)
+
+            # Save butonunu bulup mouse ile tıkla
+            save_button = None
+            if hasattr(self.gui, 'data_entry_window'):
+                # Save butonunu modal içinde ara
+                for widget in self.gui.data_entry_window.winfo_children():
+                    if hasattr(widget, 'winfo_children'):
+                        for child in widget.winfo_children():
+                            if hasattr(child, 'cget') and 'Kaydet' in str(child.cget('text')):
+                                save_button = child
+                                break
+
+            if save_button:
+                self.click_widget_simulation("Kaydet butonu", save_button, delay=0.5)
+
             self.call_in_gui_thread(self.gui.save_advanced_record)
 
             self.log_step(f"✅ Kayıt {record_num}/{total} başarıyla işlendi", 0.8)
@@ -586,19 +604,21 @@ class EnterpriseRPABot:
     # === PHASE 4: FİNALİZASYON ===
     
     def phase4_finalization_and_reports(self):
-        """4. Faz: Sonlandırma ve raporlama"""
+        """DÜZELTME: Final onay ile sonlandırma"""
         self.log_step("🎯 FAZ 4: Sonlandırma ve raporlama...", 1.0)
-        
+
         # 6. adımı çalıştır (toplu onay)
         self.log_step("✅ Adım 6: Toplu onay işlemi gerçekleştiriliyor...", 1.0)
         self.call_in_gui_thread(self.gui.step6_batch_confirm)
-        
+
         # İstatistikleri hesapla
         total_files = len(self.excel_files)
         total_records = self.total_records_processed
-        success_rate = (total_records / (total_records + self.failed_records) * 100) if (total_records + self.failed_records) > 0 else 0
+        success_rate = (
+            total_records / (total_records + self.failed_records) * 100
+        ) if (total_records + self.failed_records) > 0 else 0
         processing_time = time.time() - self.start_time if self.start_time else 0
-        
+
         # Sonuç raporu
         self.log_step("📊 SONUÇ RAPORU:", 1.0)
         self.log_step(f"   📁 İşlenen Dosya Sayısı: {total_files}", 0.3)
@@ -607,8 +627,74 @@ class EnterpriseRPABot:
         self.log_step(f"   ❌ Başarısız İşlemler: {self.failed_records}", 0.3)
         self.log_step(f"   📈 Başarı Oranı: %{success_rate:.1f}", 0.3)
         self.log_step(f"   ⏱️ Toplam Süre: {processing_time:.1f} saniye", 0.3)
-        
+
+        # DÜZELTME: Final onay pop-up'ı
+        self.show_final_completion_dialog(total_records, total_files, success_rate)
+
         self.log_step("✅ FAZ 4 TAMAMLANDI: Tüm işlemler bitti", 2.0)
+
+    def show_final_completion_dialog(self, total_records: int, total_files: int, success_rate: float):
+        """Final tamamlanma dialog'u"""
+        if not self.gui:
+            return
+
+        def show_dialog():
+            completion_dialog = tk.Toplevel(self.gui.root)
+            completion_dialog.title("🎉 RPA İşlemi Tamamlandı")
+            completion_dialog.geometry("500x350")
+            completion_dialog.configure(bg='#1e1e2e')
+
+            # Merkezi konum
+            x = (completion_dialog.winfo_screenwidth() // 2) - 250
+            y = (completion_dialog.winfo_screenheight() // 2) - 175
+            completion_dialog.geometry(f"500x350+{x}+{y}")
+
+            # Üstte kal ve modal yap
+            completion_dialog.attributes('-topmost', True)
+            completion_dialog.grab_set()
+            completion_dialog.focus_set()
+
+            tk.Label(completion_dialog, text="🎉", font=('Segoe UI', 48), bg='#1e1e2e', fg='#a6e3a1').pack(pady=20)
+            tk.Label(
+                completion_dialog,
+                text="RPA İşlemi Başarıyla Tamamlandı!",
+                font=('Segoe UI', 16, 'bold'),
+                bg='#1e1e2e',
+                fg='#cdd6f4',
+            ).pack(pady=10)
+
+            stats_text = f"""
+📊 İşlem Sonuçları:
+        
+📁 İşlenen Dosya: {total_files}
+📋 Toplam Kayıt: {total_records}
+📈 Başarı Oranı: %{success_rate:.1f}
+⏱️ Süre: {time.time() - self.start_time:.1f} saniye
+
+✅ Tüm veriler sisteme aktarıldı!
+        """
+
+            tk.Label(
+                completion_dialog,
+                text=stats_text,
+                font=('Segoe UI', 11),
+                justify='center',
+                bg='#1e1e2e',
+                fg='#cdd6f4',
+            ).pack(pady=20)
+
+            tk.Button(
+                completion_dialog,
+                text="Tamam",
+                command=completion_dialog.destroy,
+                bg='#89b4fa',
+                fg='#1e1e2e',
+                font=('Segoe UI', 12, 'bold'),
+                width=15,
+                height=2,
+            ).pack(pady=20)
+
+        self.call_in_gui_thread(show_dialog)
         
     # === ANA RPA SÜREÇ YÖNETİMİ ===
     
