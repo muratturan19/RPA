@@ -152,29 +152,58 @@ class EnterpriseRPABot:
         """1. Faz: Finans modülüne karmaşık navigasyon"""
         self.log_step("🎯 FAZ 1: Finans-Tahsilat modülüne navigasyon başlıyor...", 1.0)
 
-        # Önce Dashboard sekmesine geç ve göster
-        self.log_step("🏠 Adım 0: Dashboard sekmesi öne getiriliyor...", 0.5)
-        self.call_in_gui_thread(self.gui.notebook.select, 0)
-        if hasattr(self.gui, 'dashboard_frame'):
-            self.call_in_gui_thread(self.highlight_widget, self.gui.dashboard_frame)
+        # Pencereyi öne getir ve mouse hareketlerini göster
+        self.call_in_gui_thread(self.focus_window)
 
-        # Adım 1: Ana menüden Finans seç (simülasyon)
-        self.log_step("📋 Adım 1.1: Ana menüden 'Finans-Tahsilat' seçiliyor...", 0.8)
-        self.call_in_gui_thread(self.gui.menu_selected, "💰 Finans", "Tahsilat İşlemleri")
-        
-        # Adım 2: Finans sekmesine geç
-        self.log_step("📊 Adım 1.2: Finans-Tahsilat sekmesine geçiliyor...", 1.0)
-        self.call_in_gui_thread(self.gui.notebook.select, 2)  # Finans sekmesi (index 2)
-        if hasattr(self.gui, 'finans_frame'):
-            self.call_in_gui_thread(self.highlight_widget, self.gui.finans_frame)
-        
-        # Adım 3: Alt sekme navigasyonu (Veri İşlemleri)
-        self.log_step("🔧 Adım 1.3: 'Veri İşlemleri' alt sekmesine yönlendiriliyor...", 0.8)
-        
-        # Finans modülü açıldığında otomatik olarak "Veri İşlemleri" sekmesi aktif
-        # GUI tasarımında zaten bu şekilde ayarlandı
-        
-        self.log_step("✅ FAZ 1 TAMAMLANDI: Finans-Tahsilat modülü hazır", 1.0)
+        tab_keys = {
+            0: "dashboard",
+            1: "accounting",
+            2: "finance",
+            3: "inventory",
+            4: "reports",
+            5: "system",
+        }
+
+        def get_tab_widget(index: int):
+            return getattr(self.gui, "tabs", {}).get(tab_keys.get(index)) if hasattr(self.gui, "tabs") else None
+
+        # 0 - Dashboard sekmesine tıkla
+        dashboard_widget = get_tab_widget(0)
+        self.click_widget_simulation("Dashboard sekmesi", dashboard_widget)
+        self.call_in_gui_thread(self.gui.notebook.select, 0)
+
+        # Sırayla Muhasebe(1), Stok(3), Raporlar(4), Sistem(5)
+        sequence = [
+            (1, "Muhasebe"),
+            (3, "Stok"),
+            (4, "Raporlar"),
+            (5, "Sistem"),
+        ]
+
+        for idx, name in sequence:
+            widget = get_tab_widget(idx)
+            self.click_widget_simulation(f"{name} sekmesi", widget)
+            self.call_in_gui_thread(self.gui.notebook.select, idx)
+
+        # Son olarak Finans-Tahsilat(2)
+        finance_widget = get_tab_widget(2)
+        self.click_widget_simulation("Finans-Tahsilat sekmesi", finance_widget)
+        self.call_in_gui_thread(self.gui.notebook.select, 2)
+
+        # Veri Giriş modal'ını aç
+        self.log_step("🚀 Veri Giriş modal'ı açılıyor...", 0.8)
+        self.call_in_gui_thread(self.gui.open_advanced_data_entry)
+        self.log_step("⏳ Modal yükleniyor...", 1.0)
+
+        # Dashboard sekmesine geri dön (modal açık kalsın)
+        self.log_step("↩️ Dashboard sekmesine dönülüyor (modal açık)...", 0.5)
+        self.click_widget_simulation("Dashboard sekmesi", dashboard_widget)
+        self.call_in_gui_thread(self.gui.notebook.select, 0)
+
+        # Veri girişi başlat
+        self.log_step("🚀 Veri girişi başlatılıyor...", 0.5)
+
+        self.log_step("✅ FAZ 1 TAMAMLANDI: Navigasyon ve modal hazır", 1.0)
         
     def phase2_execute_6_step_process(self):
         """2. Faz: 6 adımlı süreç navigasyonu"""
