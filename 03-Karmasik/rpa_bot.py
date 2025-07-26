@@ -796,33 +796,33 @@ class EnterpriseRPABot:
             self.is_running = False
             
     def run(self, excel_files: List[Path] = None, progress_callback: Callable = None):
-        """RPA'yi başlat - Ana giriş noktası"""
+        """DÜZELTME: RPA'yi direkt çalıştır - thread yok"""
         if not self.gui:
             self.log_step("❌ GUI referansı ayarlanmamış!", 1.0)
             return None
-            
+
         if excel_files:
             self.set_processing_files(excel_files)
-            
+
         self.is_running = True
         self.progress_callback = progress_callback
-        
-        def automation_worker():
-            try:
-                self.run_complete_automation_sequence()
-                
-                # Progress callback ile sonucu bildir
-                if self.progress_callback:
-                    self.progress_callback(1.0, "Tüm dosyalar işlendi")
-                    
-            except Exception as e:
-                self.log_step(f"❌ RPA Worker Hatası: {e}", 1.0)
-            finally:
-                self.is_running = False
-                
-        thread = threading.Thread(target=automation_worker, daemon=True)
-        thread.start()
-        return thread
+
+        # DÜZELTME: Thread kullanma, direkt çalıştır
+        try:
+            print("🚀 RPA direkt başlatılıyor...")
+            self.run_complete_automation_sequence()
+
+            # Progress callback ile sonucu bildir
+            if self.progress_callback:
+                self.progress_callback(1.0, "Tüm dosyalar işlendi")
+
+            return self.get_results()
+
+        except Exception as e:
+            self.log_step(f"❌ RPA Hatası: {e}", 1.0)
+            return []
+        finally:
+            self.is_running = False
         
     def get_results(self) -> List[Dict[str, Any]]:
         """İşlem sonuçlarını döndür"""

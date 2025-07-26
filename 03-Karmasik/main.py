@@ -210,42 +210,56 @@ def handle_streamlit_request(file_paths: List[str], progress_callback: Callable 
 
 
 def run_rpa_with_gui(excel_paths: List[Path], progress_callback: Callable = None):
-    """Streamlit entegrasyonu için ana fonksiyon"""
+    """Streamlit entegrasyonu için ana fonksiyon - DÜZELTME"""
     global gui_app, rpa_bot
 
     print(f"🎯 RPA işlemi başlatılıyor: {len(excel_paths)} dosya")
 
-    # Thread'de GUI başlat
+    # DÜZELTME: GUI'yi ayrı thread'de başlat
     def gui_worker():
         global gui_app
         from advanced_gui import EnterpriseGUI
 
         gui_app = EnterpriseGUI()
         gui_app.set_processing_files(excel_paths)
-
-        # RPA'yi GUI hazır olduktan sonra başlat
-        def start_rpa_after_gui():
-            global rpa_bot
-            from rpa_bot import EnterpriseRPABot
-
-            rpa_bot = EnterpriseRPABot()
-            rpa_bot.set_gui_reference(gui_app)
-            rpa_bot.set_processing_speed("normal")
-
-            # RPA'yi başlat
-            rpa_bot.run(excel_paths, progress_callback)
-
-        gui_app.root.after(1500, start_rpa_after_gui)
         gui_app.run()
 
-    gui_thread = threading.Thread(target=gui_worker)
+    # GUI thread'i başlat ama join yapma!
+    gui_thread = threading.Thread(target=gui_worker, daemon=True)
     gui_thread.start()
-    gui_thread.join()  # Tamamlanmasını bekle
 
-    # Sonuçları döndür
-    if rpa_bot:
-        return rpa_bot.get_results()
-    return []
+    # GUI'nin başlaması için bekle
+    time.sleep(3)
+    print("⏳ GUI başlatıldı, RPA hazırlanıyor...")
+
+    # DÜZELTME: RPA'yi ana thread'de çalıştır
+    try:
+        from rpa_bot import EnterpriseRPABot
+
+        rpa_bot = EnterpriseRPABot()
+        rpa_bot.set_gui_reference(gui_app)
+        rpa_bot.set_processing_speed("normal")
+
+        # RPA'yi başlat - BLOCKING çağrı
+        print("🚀 RPA başlatılıyor...")
+        rpa_bot.run_complete_automation_sequence()
+        print("✅ RPA tamamlandı!")
+
+        # Sonuçları döndür
+        return rpa_bot.get_results() if rpa_bot else []
+
+    except Exception as e:
+        print(f"❌ RPA Hatası: {e}")
+        return []
+
+    finally:
+        # GUI'yi kapat
+        if gui_app and hasattr(gui_app, 'root'):
+            try:
+                gui_app.root.quit()
+                gui_app.root.destroy()
+            except:
+                pass
 
 
 def show_system_info():
