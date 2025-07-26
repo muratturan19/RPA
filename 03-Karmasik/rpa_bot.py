@@ -589,9 +589,14 @@ class EnterpriseRPABot:
                 for widget in self.gui.data_entry_window.winfo_children():
                     if hasattr(widget, 'winfo_children'):
                         for child in widget.winfo_children():
-                            if hasattr(child, 'cget') and 'Kaydet' in str(child.cget('text')):
-                                save_button = child
-                                break
+                            if hasattr(child, 'cget'):
+                                try:
+                                    text_val = child.cget('text')
+                                except tk.TclError:
+                                    continue
+                                if 'Kaydet' in str(text_val):
+                                    save_button = child
+                                    break
 
             if save_button:
                 self.click_widget_simulation("Kaydet butonu", save_button, delay=0.5)
