@@ -37,3 +37,9 @@ Streamlit paneli üzerinden Excel dosyalarını yükleyip işle başlatabilirsin
 - `rpa_bot.py`: Excel verilerini bu arayüz üzerinden işleyen otomasyon botu
 - `app.py`: Drag & Drop özellikli Streamlit paneli
 - `main.py`: Yukarıdaki bileşenleri yöneten ana kontrol merkezi
+
+## Adım Onayı
+
+RPA botu her adımın ardından kullanıcıya "Devam edilsin mi?" sorusunu içeren
+bir onay penceresi gösterir. "HAYIR" seçilirse ilgili adım ve kalan süreç
+iptal edilir. Bu sayede uzun işlemleri adım adım kontrol edebilirsiniz.
