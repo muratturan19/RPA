@@ -239,6 +239,7 @@ def run_rpa_with_gui(excel_paths: List[Path], progress_callback: Callable = None
         rpa_bot = EnterpriseRPABot()
         rpa_bot.set_gui_reference(gui_app)
         rpa_bot.set_processing_speed("normal")
+        rpa_bot.set_processing_files(excel_paths)
 
         # RPA'yi başlat - BLOCKING çağrı
         print("🚀 RPA başlatılıyor...")
