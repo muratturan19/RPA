@@ -764,7 +764,7 @@ class EnterpriseRPABot:
 
                     self.click_widget_simulation(f"{field_desc} alanı", entries.get(field_key), delay=0.3)
                     result = self.call_in_gui_thread(self.fill_entry_field, entries[field_key], str(field_value))
-                    if result is None:
+                    if result is False:
                         self.log_step(f"⚠️ {field_key} doldurma başarısız", 0.2)
 
                 except Exception as e:
@@ -799,8 +799,10 @@ class EnterpriseRPABot:
         try:
             entry_widget.delete(0, tk.END)
             entry_widget.insert(0, value)
+            return True
         except Exception as e:
             self.log_step(f"⚠️ Alan doldurma hatası: {e}", 0.1)
+            return False
             
     # === PHASE 4: FİNALİZASYON ===
     
