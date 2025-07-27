@@ -147,6 +147,8 @@ class EnterpriseRPABot:
         if self.gui and getattr(self.gui, 'data_entry_window', None):
             try:
                 self.gui.data_entry_window.lift()
+                # Ensure modal stays on top during automation
+                self.gui.data_entry_window.attributes('-topmost', True)
                 self.gui.data_entry_window.focus_force()
             except Exception:
                 pass
