@@ -1502,52 +1502,58 @@ class Level3EnterpriseGUI:
         self.update_status_with_glow("🎨 Level 3 Veri giriş sistemi kapatıldı")
 
     def _show_info_left(self, title: str, message: str) -> None:
-        """🎨 Level 3 bilgi kutusu"""
+        """ACİL DÜZELTME: Butonlar görünmüyor!"""
         popup = tk.Toplevel(self.root)
         popup.title(title)
-        popup.geometry("450x220")
+        popup.geometry("500x300")
         popup.configure(bg='#1e1e2e')
-        popup.attributes('-alpha', 0.95)
 
-        # Center position
-        x = (popup.winfo_screenwidth() // 2) - 225
-        y = (popup.winfo_screenheight() // 2) - 110
-        popup.geometry(f"450x220+{x}+{y}")
+        # Center
+        popup.update_idletasks()
+        x = (popup.winfo_screenwidth() // 2) - 250
+        y = (popup.winfo_screenheight() // 2) - 150
+        popup.geometry(f"500x300+{x}+{y}")
 
         popup.transient(self.root)
         popup.grab_set()
         popup.focus_set()
         popup.attributes('-topmost', True)
 
-        # Level 3 content
         tk.Label(popup, text="ℹ️", font=('Segoe UI Emoji', 32),
-                 bg='#1e1e2e', fg='#89b4fa').pack(pady=15)
-        
-        tk.Label(popup, text=title, font=('Segoe UI', 16, 'bold'),
-                 bg='#1e1e2e', fg='#89b4fa').pack(pady=5)
-        
-        tk.Label(popup, text=message, font=('Segoe UI', 12),
-                 bg='#1e1e2e', fg='#cdd6f4', wraplength=400, justify='center').pack(padx=20, pady=10)
+                 bg='#1e1e2e', fg='#89b4fa').pack(pady=20)
 
-        btn = tk.Button(popup, text="TAMAM", command=popup.destroy,
-                  font=('Segoe UI', 12, 'bold'), bg='#89b4fa', fg='#1e1e2e',
-                  relief='raised', borderwidth=3, width=15, height=2, cursor='hand2')
-        btn.pack(pady=15)
+        tk.Label(popup, text=title, font=('Segoe UI', 16, 'bold'),
+                 bg='#1e1e2e', fg='#89b4fa').pack(pady=10)
+
+        tk.Label(popup, text=message, font=('Segoe UI', 12),
+                 bg='#1e1e2e', fg='#cdd6f4', wraplength=400).pack(pady=20)
+
+        btn = tk.Button(
+            popup,
+            text="TAMAM",
+            command=popup.destroy,
+            font=('Segoe UI', 16, 'bold'),
+            bg='#FF0000',
+            fg='#FFFFFF',
+            width=20,
+            height=3,
+        )
+        btn.pack(pady=30)
 
         popup.wait_window()
 
     def _ask_yes_no_left(self, title: str, message: str) -> bool:
-        """🎨 Level 3 yes/no dialog"""
+        """ACİL DÜZELTME: Yes/No butonları görünmüyor!"""
         popup = tk.Toplevel(self.root)
         popup.title(title)
-        popup.geometry("500x280")
+        popup.geometry("600x350")
         popup.configure(bg='#1e1e2e')
-        popup.attributes('-alpha', 0.95)
 
-        # Center position
-        x = (popup.winfo_screenwidth() // 2) - 250
-        y = (popup.winfo_screenheight() // 2) - 140
-        popup.geometry(f"500x280+{x}+{y}")
+        # Center
+        popup.update_idletasks()
+        x = (popup.winfo_screenwidth() // 2) - 300
+        y = (popup.winfo_screenheight() // 2) - 175
+        popup.geometry(f"600x350+{x}+{y}")
 
         popup.transient(self.root)
         popup.grab_set()
@@ -1556,15 +1562,14 @@ class Level3EnterpriseGUI:
 
         result = {"val": False}
 
-        # Level 3 content
         tk.Label(popup, text="❓", font=('Segoe UI Emoji', 36),
-                 bg='#1e1e2e', fg='#f9e2af').pack(pady=15)
-        
+                 bg='#1e1e2e', fg='#f9e2af').pack(pady=20)
+
         tk.Label(popup, text=title, font=('Segoe UI', 16, 'bold'),
-                 bg='#1e1e2e', fg='#f9e2af').pack(pady=5)
-        
+                 bg='#1e1e2e', fg='#f9e2af').pack(pady=10)
+
         tk.Label(popup, text=message, font=('Segoe UI', 12),
-                 bg='#1e1e2e', fg='#cdd6f4', wraplength=450, justify='center').pack(padx=20, pady=15)
+                 bg='#1e1e2e', fg='#cdd6f4', wraplength=500).pack(pady=20)
 
         def yes():
             result["val"] = True
@@ -1575,17 +1580,31 @@ class Level3EnterpriseGUI:
             popup.destroy()
 
         btn_frame = tk.Frame(popup, bg='#1e1e2e')
-        btn_frame.pack(pady=20)
-        
-        evet_btn = tk.Button(btn_frame, text="EVET", command=yes,
-                  font=('Segoe UI', 12, 'bold'), bg='#a6e3a1', fg='#1e1e2e',
-                  relief='raised', borderwidth=3, width=12, height=2, cursor='hand2')
-        evet_btn.pack(side="left", padx=15)
-        
-        hayir_btn = tk.Button(btn_frame, text="HAYIR", command=no,
-                  font=('Segoe UI', 12, 'bold'), bg='#f38ba8', fg='#1e1e2e',
-                  relief='raised', borderwidth=3, width=12, height=2, cursor='hand2')
-        hayir_btn.pack(side="left", padx=15)
+        btn_frame.pack(pady=40)
+
+        evet_btn = tk.Button(
+            btn_frame,
+            text="EVET",
+            command=yes,
+            font=('Segoe UI', 16, 'bold'),
+            bg='#00FF00',
+            fg='#000000',
+            width=15,
+            height=3,
+        )
+        evet_btn.pack(side="left", padx=30)
+
+        hayir_btn = tk.Button(
+            btn_frame,
+            text="HAYIR",
+            command=no,
+            font=('Segoe UI', 16, 'bold'),
+            bg='#FF0000',
+            fg='#FFFFFF',
+            width=15,
+            height=3,
+        )
+        hayir_btn.pack(side="left", padx=30)
 
         popup.wait_window()
         return result["val"]
