@@ -619,6 +619,8 @@ class EnterpriseRPABot:
     def process_single_excel_file(self, excel_path: Path) -> bool:
         """Tek Excel dosyasını işle"""
         try:
+            # Clear any previous failure count so results are per-file
+            self.failed_records = 0
             self.log_step(f"📂 Excel dosyası okunuyor: {excel_path.name}", 0.8)
             
             # Excel'i oku
@@ -659,13 +661,15 @@ class EnterpriseRPABot:
                 
             # Her kayıt için veri girişi yap
             self.process_records_from_file(processed_records, excel_path.name)
-            
-            # Dosya sonucu kaydet
+
+            # Dosya sonucu kaydet - başarısız kayıtlar dosyaya özel hesaplanır
+            file_errors = self.failed_records
+            success_count = len(processed_records) - file_errors
             self.results.append({
                 'file': excel_path.name,
                 'records': len(processed_records),
-                'success': len(processed_records) - self.failed_records,
-                'errors': self.failed_records,
+                'success': success_count,
+                'errors': file_errors,
                 'processing_time': time.time() - self.start_time if self.start_time else 0
             })
             
