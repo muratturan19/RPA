@@ -13,6 +13,10 @@ import pyautogui
 import random
 from datetime import datetime
 
+# DÜZELTME: PyAutoGUI güvenlik ayarları
+pyautogui.FAILSAFE = True
+pyautogui.PAUSE = 0.1
+
 class EnterpriseRPABot:
     """Enterprise seviye RPA botu - Karmaşık navigasyon ve çoklu dosya işleme"""
     
@@ -292,45 +296,98 @@ class EnterpriseRPABot:
             return None
         
     def move_mouse_to_widget(self, widget, smooth: bool = True):
-        """Fareyi widget'a yumuşak hareketle taşı"""
+        """DÜZELTME: Fareyi widget'a yumuşak hareketle taşı - Gelişmiş hata yönetimi"""
         if not self.mouse_simulation:
             return
 
         try:
             self.focus_window()
-            # Widget koordinatlarını al
-            x = widget.winfo_rootx() + widget.winfo_width() // 2
-            y = widget.winfo_rooty() + widget.winfo_height() // 2
-            
+
+            # DÜZELTME: Widget koordinat kontrolü
+            try:
+                x = widget.winfo_rootx() + widget.winfo_width() // 2
+                y = widget.winfo_rooty() + widget.winfo_height() // 2
+            except (tk.TclError, AttributeError) as e:
+                self.log_step(f"⚠️ Widget koordinat hatası: {e}", 0.1)
+                return
+
+            # DÜZELTME: Ekran sınırları kontrolü
+            screen_width, screen_height = pyautogui.size()
+            if not (0 <= x <= screen_width and 0 <= y <= screen_height):
+                self.log_step(f"⚠️ Koordinat ekran dışında: ({x}, {y})", 0.1)
+                return
+
             # Küçük rastgele offset (daha doğal)
             x += random.randint(-5, 5)
             y += random.randint(-2, 2)
-            
-            # Yumuşak hareket
+
+            # DÜZELTME: Sınırları tekrar kontrol et
+            x = max(0, min(x, screen_width - 1))
+            y = max(0, min(y, screen_height - 1))
+
+            # Yumuşak hareket - hata yönetimi ile
             duration = 0.3 if smooth else 0.1
-            pyautogui.moveTo(x, y, duration=duration)
-            
+            try:
+                pyautogui.moveTo(x, y, duration=duration)
+            except pyautogui.FailSafeException:
+                self.log_step("⚠️ PyAutoGUI FailSafe tetiklendi", 0.1)
+                return
+            except Exception as e:
+                self.log_step(f"⚠️ Mouse hareket hatası: {e}", 0.1)
+                return
+
             # Çok kısa bekleme (gerçekçi)
             time.sleep(random.uniform(0.05, 0.15) * self.delay_factor)
-            
+
         except Exception as e:
-            self.log_step(f"⚠️ Mouse hareket hatası: {e}", 0.1)
+            self.log_step(f"⚠️ Mouse hareket genel hatası: {e}", 0.1)
             
     def click_widget_simulation(
         self, widget_name: str, widget=None, delay: float = 0.5, call_after: bool = True
     ):
-        """Widget tıklama simülasyonu - gelişmiş"""
+        """DÜZELTME: Widget tıklama simülasyonu - Gelişmiş hata yönetimi"""
         self.log_step(f"🖱️ {widget_name} tıklanıyor...", 0.2)
 
         if widget and self.mouse_simulation:
-            self.call_in_gui_thread(self.move_mouse_to_widget, widget, True)
-            self.call_in_gui_thread(self.highlight_widget, widget)
+            try:
+                widget.winfo_exists()
+            except (tk.TclError, AttributeError):
+                self.log_step(f"⚠️ Widget {widget_name} mevcut değil", 0.1)
+                return
 
-        # Tıklama gecikmesi
+            try:
+                self.call_in_gui_thread(self.move_mouse_to_widget, widget, True)
+                self.call_in_gui_thread(self.highlight_widget, widget)
+            except Exception as e:
+                self.log_step(f"⚠️ Mouse/highlight hatası: {e}", 0.1)
+
         time.sleep(random.uniform(0.1, 0.3) * self.delay_factor)
         self.log_step(f"✅ {widget_name} başarıyla tıklandı", delay)
+
         if call_after:
-            self.call_in_gui_thread(self.after_mouse_click)
+            try:
+                self.call_in_gui_thread(self.after_mouse_click)
+            except Exception as e:
+                self.log_step(f"⚠️ After mouse click hatası: {e}", 0.1)
+
+    def _find_save_button(self):
+        """DÜZELTME: Save butonunu güvenli şekilde bul"""
+        if not self.gui or not hasattr(self.gui, 'data_entry_window'):
+            return None
+        try:
+            for widget in self.gui.data_entry_window.winfo_children():
+                if hasattr(widget, 'winfo_children'):
+                    for child in widget.winfo_children():
+                        if hasattr(child, 'cget'):
+                            try:
+                                text_val = child.cget('text')
+                            except tk.TclError:
+                                continue
+                            if 'Kaydet' in str(text_val):
+                                return child
+        except Exception:
+            return None
+        return None
         
     # === PHASE 1: KARMAŞIK GUI NAVİGASYONU ===
     
@@ -655,9 +712,8 @@ class EnterpriseRPABot:
         self.log_step(f"✅ {file_name} dosyasının tüm kayıtları işlendi", 1.0)
         
     def process_single_record(self, record: Dict, record_num: int, total: int) -> bool:
-        """DÜZELTME: Mouse hareketleri ile kayıt işleme"""
+        """DÜZELTME: Tek kayıt işleme - Gelişmiş hata yönetimi"""
         try:
-            # Modal'ın hazır olduğundan emin ol
             if not self.wait_for_modal_ready(5):
                 self.log_step("⚠️ Modal form hazır değil, kayıt atlanıyor", 0.5)
                 return False
@@ -669,56 +725,56 @@ class EnterpriseRPABot:
 
             entries = modal_entries
 
-            # 1. MOUSE HAREKETİ + Tarih alanı
-            self.log_step(f"📅 Tarih giriliyor: {record['tarih']}", 0.3)
-            self.click_widget_simulation("Tarih alanı", entries.get('date_entry'), delay=0.3)
-            self.call_in_gui_thread(self.fill_entry_field, entries['date_entry'], record['tarih'])
+            field_operations = [
+                ('date_entry', record['tarih'], "📅 Tarih"),
+                ('desc_entry', record['aciklama'][:80] + "..." if len(record['aciklama']) > 80 else record['aciklama'], "📝 Açıklama"),
+                ('amount_entry', record['tutar'], "💰 Tutar"),
+                ('file_entry', record['dosya'], "📁 Dosya")
+            ]
 
-            # 2. MOUSE HAREKETİ + Açıklama alanı
-            short_desc = record['aciklama'][:80] + "..." if len(record['aciklama']) > 80 else record['aciklama']
-            self.log_step(f"📝 Açıklama giriliyor: {short_desc[:30]}...", 0.3)
-            self.click_widget_simulation("Açıklama alanı", entries.get('desc_entry'), delay=0.3)
-            self.call_in_gui_thread(self.fill_entry_field, entries['desc_entry'], short_desc)
+            for field_key, field_value, field_desc in field_operations:
+                try:
+                    if field_key not in entries:
+                        self.log_step(f"⚠️ {field_key} alanı bulunamadı", 0.2)
+                        continue
 
-            # 3. MOUSE HAREKETİ + Tutar alanı
-            self.log_step(f"💰 Tutar giriliyor: {record['tutar']}", 0.3)
-            self.click_widget_simulation("Tutar alanı", entries.get('amount_entry'), delay=0.3)
-            self.call_in_gui_thread(self.fill_entry_field, entries['amount_entry'], record['tutar'])
+                    self.log_step(f"{field_desc} giriliyor: {str(field_value)[:30]}...", 0.3)
+                    try:
+                        entries[field_key].winfo_exists()
+                    except tk.TclError:
+                        self.log_step(f"⚠️ {field_key} widget'ı mevcut değil", 0.2)
+                        continue
 
-            # 4. MOUSE HAREKETİ + Dosya alanı
-            self.log_step(f"📁 Dosya adı giriliyor: {record['dosya']}", 0.3)
-            self.click_widget_simulation("Dosya alanı", entries.get('file_entry'), delay=0.3)
-            self.call_in_gui_thread(self.fill_entry_field, entries['file_entry'], record['dosya'])
+                    self.click_widget_simulation(f"{field_desc} alanı", entries.get(field_key), delay=0.3)
+                    result = self.call_in_gui_thread(self.fill_entry_field, entries[field_key], str(field_value))
+                    if result is None:
+                        self.log_step(f"⚠️ {field_key} doldurma başarısız", 0.2)
 
-            # 5. MOUSE HAREKETİ + Kaydet butonu (Save butonunu bul)
+                except Exception as e:
+                    self.log_step(f"⚠️ {field_key} işleme hatası: {e}", 0.2)
+                    continue
+
             self.log_step("💾 Kayıt kaydediliyor...", 0.5)
 
-            # Save butonunu bulup mouse ile tıkla
-            save_button = None
-            if hasattr(self.gui, 'data_entry_window'):
-                # Save butonunu modal içinde ara
-                for widget in self.gui.data_entry_window.winfo_children():
-                    if hasattr(widget, 'winfo_children'):
-                        for child in widget.winfo_children():
-                            if hasattr(child, 'cget'):
-                                try:
-                                    text_val = child.cget('text')
-                                except tk.TclError:
-                                    continue
-                                if 'Kaydet' in str(text_val):
-                                    save_button = child
-                                    break
+            try:
+                save_button = self._find_save_button()
+                if save_button:
+                    self.click_widget_simulation("Kaydet butonu", save_button, delay=0.5)
 
-            if save_button:
-                self.click_widget_simulation("Kaydet butonu", save_button, delay=0.5)
+                result = self.call_in_gui_thread(self.gui.save_advanced_record)
+                if result is None:
+                    self.log_step("⚠️ Kaydetme işlemi başarısız", 0.3)
+                    return False
 
-            self.call_in_gui_thread(self.gui.save_advanced_record)
+            except Exception as e:
+                self.log_step(f"⚠️ Kaydetme hatası: {e}", 0.3)
+                return False
 
             self.log_step(f"✅ Kayıt {record_num}/{total} başarıyla işlendi", 0.8)
             return True
-            
+
         except Exception as e:
-            self.log_step(f"❌ Kayıt işleme hatası: {e}", 0.5)
+            self.log_step(f"❌ Kayıt işleme genel hatası: {e}", 0.5)
             return False
             
     def fill_entry_field(self, entry_widget, value: str):

@@ -12,11 +12,14 @@ from pathlib import Path
 from typing import List, Dict, Any, Callable, Optional
 import subprocess
 import json
+import signal
+import atexit
 
 # Global referanslar
 gui_app = None
 rpa_bot = None
 active_threads = []
+streamlit_process = None
 
 
 def parse_command_line_args():
@@ -210,29 +213,45 @@ def handle_streamlit_request(file_paths: List[str], progress_callback: Callable 
 
 
 def run_rpa_with_gui(excel_paths: List[Path], progress_callback: Callable = None):
-    """Streamlit entegrasyonu için ana fonksiyon - DÜZELTME"""
-    global gui_app, rpa_bot
+    """DÜZELTME: Streamlit entegrasyonu - Gelişmiş hata yönetimi"""
+    global gui_app, rpa_bot, active_threads
 
     print(f"🎯 RPA işlemi başlatılıyor: {len(excel_paths)} dosya")
 
-    # DÜZELTME: GUI'yi ayrı thread'de başlat
     def gui_worker():
+        """DÜZELTME: GUI worker thread - hata yönetimi ile"""
         global gui_app
-        from advanced_gui import EnterpriseGUI
+        try:
+            from advanced_gui import EnterpriseGUI
+            gui_app = EnterpriseGUI()
+            gui_app.set_processing_files(excel_paths)
+            gui_app.run()
+        except Exception as e:
+            print(f"❌ GUI worker hatası: {e}")
+        finally:
+            print("🔄 GUI worker sonlandırıldı")
 
-        gui_app = EnterpriseGUI()
-        gui_app.set_processing_files(excel_paths)
-        gui_app.run()
-
-    # GUI thread'i başlat ama join yapma!
+    # DÜZELTME: GUI thread'i daha güvenli başlat
     gui_thread = threading.Thread(target=gui_worker, daemon=True)
+    gui_thread._stop_event = threading.Event()
     gui_thread.start()
+    active_threads.append(gui_thread)
 
-    # GUI'nin başlaması için bekle
-    time.sleep(3)
-    print("⏳ GUI başlatıldı, RPA hazırlanıyor...")
+    # GUI'nin başlaması için bekle - timeout ile
+    max_wait = 10
+    for i in range(max_wait):
+        if gui_app and hasattr(gui_app, 'root'):
+            break
+        time.sleep(1)
+        print(f"⏳ GUI bekleniyor... ({i+1}/{max_wait})")
 
-    # DÜZELTME: RPA'yi ana thread'de çalıştır
+    if not gui_app:
+        print("❌ GUI başlatılamadı - timeout")
+        return []
+
+    print("✅ GUI başlatıldı, RPA hazırlanıyor...")
+
+    # DÜZELTME: RPA'yi ana thread'de çalıştır - hata yönetimi ile
     try:
         from rpa_bot import EnterpriseRPABot
 
@@ -241,12 +260,13 @@ def run_rpa_with_gui(excel_paths: List[Path], progress_callback: Callable = None
         rpa_bot.set_processing_speed("normal")
         rpa_bot.set_processing_files(excel_paths)
 
-        # RPA'yi başlat - BLOCKING çağrı
         print("🚀 RPA başlatılıyor...")
-        rpa_bot.run_complete_automation_sequence()
+        result = rpa_bot.run_complete_automation_sequence()
         print("✅ RPA tamamlandı!")
 
-        # Sonuçları döndür
+        if progress_callback:
+            progress_callback(1.0, "Tüm dosyalar işlendi")
+
         return rpa_bot.get_results() if rpa_bot else []
 
     except Exception as e:
@@ -254,13 +274,18 @@ def run_rpa_with_gui(excel_paths: List[Path], progress_callback: Callable = None
         return []
 
     finally:
-        # GUI'yi kapat
+        # DÜZELTME: Güvenli temizlik
+        print("🧹 RPA sonrası temizlik...")
+
         if gui_app and hasattr(gui_app, 'root'):
             try:
                 gui_app.root.quit()
                 gui_app.root.destroy()
             except:
                 pass
+
+        if gui_thread in active_threads:
+            active_threads.remove(gui_thread)
 
 
 def show_system_info():
@@ -320,26 +345,88 @@ def show_demo_scenarios():
 
 
 def cleanup_resources():
-    """Kaynakları temizle"""
-    global gui_app, rpa_bot, active_threads
+    """DÜZELTME: Gelişmiş kaynak temizleme"""
+    global gui_app, rpa_bot, active_threads, streamlit_process
 
     print("🧹 Sistem kaynakları temizleniyor...")
 
-    # RPA'yi durdur
+    # DÜZELTME: RPA'yi güvenli şekilde durdur
     if rpa_bot:
-        rpa_bot.stop()
+        try:
+            rpa_bot.stop()
+            print("✅ RPA bot durduruldu")
+        except Exception as e:
+            print(f"⚠️ RPA durdurma hatası: {e}")
 
-    # Aktif thread'leri sonlandır
-    for thread in active_threads:
-        if thread.is_alive():
-            thread.join(timeout=2)
+    # DÜZELTME: GUI'yi güvenli şekilde kapat
+    if gui_app and hasattr(gui_app, 'root'):
+        try:
+            gui_app.root.quit()
+            gui_app.root.destroy()
+            print("✅ GUI kapatıldı")
+        except Exception as e:
+            print(f"⚠️ GUI kapatma hatası: {e}")
+
+    # DÜZELTME: Streamlit process'i güvenli şekilde kapat
+    if streamlit_process:
+        try:
+            streamlit_process.terminate()
+            streamlit_process.wait(timeout=5)
+            print("✅ Streamlit process kapatıldı")
+        except subprocess.TimeoutExpired:
+            print("⚠️ Streamlit zorla kapatılıyor...")
+            streamlit_process.kill()
+        except Exception as e:
+            print(f"⚠️ Streamlit kapatma hatası: {e}")
+
+    # DÜZELTME: Aktif thread'leri gelişmiş şekilde sonlandır
+    if active_threads:
+        print(f"🔄 {len(active_threads)} thread sonlandırılıyor...")
+        for i, thread in enumerate(active_threads):
+            if thread.is_alive():
+                print(f"⏳ Thread {i+1} bekleniyor...")
+                thread.join(timeout=3)
+                if thread.is_alive():
+                    print(f"⚠️ Thread {i+1} hala aktif - zorla sonlandırılacak")
+                    if hasattr(thread, '_stop_event'):
+                        thread._stop_event.set()
+                        thread.join(timeout=2)
+                    if thread.is_alive():
+                        print(f"❌ Thread {i+1} sonlandırılamadı")
+                else:
+                    print(f"✅ Thread {i+1} sonlandırıldı")
+
+    # DÜZELTME: Global referansları temizle
+    gui_app = None
+    rpa_bot = None
+    active_threads.clear()
+    streamlit_process = None
 
     print("✅ Temizlik tamamlandı")
 
+def signal_handler(signum, frame):
+    """DÜZELTME: Signal handler - Ctrl+C için"""
+    print(f"\n🛑 Signal {signum} alındı - temizlik yapılıyor...")
+    cleanup_resources()
+    sys.exit(0)
+
+def setup_signal_handlers():
+    """DÜZELTME: Signal handler'ları ayarla"""
+    try:
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        atexit.register(cleanup_resources)
+        print("✅ Signal handler'lar ayarlandı")
+    except Exception as e:
+        print(f"⚠️ Signal handler ayarlama hatası: {e}")
+
 
 def main() -> None:
-    """Ana koordinasyon fonksiyonu"""
+    """DÜZELTME: Ana fonksiyon - signal handler'lar ile"""
     try:
+        # DÜZELTME: Signal handler'ları başlangıçta ayarla
+        setup_signal_handlers()
+
         # Banner göster
         print_banner()
 
