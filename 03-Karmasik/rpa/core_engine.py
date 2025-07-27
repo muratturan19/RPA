@@ -30,6 +30,7 @@ class EnterpriseRPABot:
         self.current_record_index = 0
         self.total_records_processed = 0
         self.failed_records = 0
+        self.total_failed_records = 0
         
         # Performans ayarları
         self.processing_speed = "fast"  # "slow", "normal", "fast"
@@ -733,11 +734,13 @@ class EnterpriseRPABot:
         try:
             if not self.wait_for_modal_ready(5):
                 self.log_step("⚠️ Modal form hazır değil, kayıt atlanıyor", 0.5)
+                self.total_failed_records += 1
                 return False
 
             modal_entries = self.find_modal_form()
             if not modal_entries:
                 self.log_step("⚠️ Modal form bulunamadı, kayıt atlanıyor", 0.5)
+                self.total_failed_records += 1
                 return False
 
             entries = modal_entries
@@ -781,10 +784,12 @@ class EnterpriseRPABot:
                 result = self.call_in_gui_thread(self.gui.save_advanced_record)
                 if result is None:
                     self.log_step("⚠️ Kaydetme işlemi başarısız", 0.3)
+                    self.total_failed_records += 1
                     return False
 
             except Exception as e:
                 self.log_step(f"⚠️ Kaydetme hatası: {e}", 0.3)
+                self.total_failed_records += 1
                 return False
 
             self.log_step(f"✅ Kayıt {record_num}/{total} başarıyla işlendi", 0.8)
@@ -792,6 +797,7 @@ class EnterpriseRPABot:
 
         except Exception as e:
             self.log_step(f"❌ Kayıt işleme genel hatası: {e}", 0.5)
+            self.total_failed_records += 1
             return False
             
     def fill_entry_field(self, entry_widget, value: str):
@@ -828,15 +834,15 @@ class EnterpriseRPABot:
 
         # Sonuç istatistikleri
         success_rate = (
-            total_records / (total_records + self.failed_records) * 100
-        ) if (total_records + self.failed_records) > 0 else 0
+            total_records / (total_records + self.total_failed_records) * 100
+        ) if (total_records + self.total_failed_records) > 0 else 0
         processing_time = time.time() - self.start_time if self.start_time else 0
 
         self.log_step("📊 SONUÇ RAPORU:", 1.0)
         self.log_step(f"   📁 İşlenen Dosya Sayısı: {total_files}", 0.3)
         self.log_step(f"   📋 Toplam Kayıt Sayısı: {total_records}", 0.3)
         self.log_step(f"   ✅ Başarılı İşlemler: {total_records}", 0.3)
-        self.log_step(f"   ❌ Başarısız İşlemler: {self.failed_records}", 0.3)
+        self.log_step(f"   ❌ Başarısız İşlemler: {self.total_failed_records}", 0.3)
         self.log_step(f"   📈 Başarı Oranı: %{success_rate:.1f}", 0.3)
         self.log_step(f"   ⏱️ Toplam Süre: {processing_time:.1f} saniye", 0.3)
 
@@ -875,6 +881,7 @@ class EnterpriseRPABot:
         """Tam otomasyon sekansı - 4 fazlı süreç"""
         try:
             self.start_time = time.time()
+            self.total_failed_records = 0
             self.log_step("🚀 KARMAŞIK RPA SİSTEMİ BAŞLATILUYOR...", 2.0)
             self.log_step("🎯 Enterprise seviye otomasyon - 4 fazlı süreç", 1.0)
             
