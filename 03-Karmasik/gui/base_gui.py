@@ -1502,13 +1502,12 @@ class Level3EnterpriseGUI:
         self.update_status_with_glow("🎨 Level 3 Veri giriş sistemi kapatıldı")
 
     def _show_info_left(self, title: str, message: str) -> None:
-        """DÜZELTME: Pop-up'ları disable et"""
-        print(f"ℹ️ {title}: {message}")
+        """Sol tarafta bilgi mesajı göster"""
+        messagebox.showinfo(title, message, parent=self.root)
 
     def _ask_yes_no_left(self, title: str, message: str) -> bool:
-        """DÜZELTME: Always True dön"""
-        print(f"❓ {title}: {message} - AUTO: EVET")
-        return True
+        """Sol tarafta evet/hayır sorusu"""
+        return messagebox.askyesno(title, message, parent=self.root)
 
     # === ORIGINAL FUNCTIONALITY PRESERVED ===
     
@@ -1543,80 +1542,42 @@ class Level3EnterpriseGUI:
 
     # Step functions (orijinal fonksiyonellik korunuyor)
     def step1_select_source(self):
-        print("✅ Adım 1: Otomatik onaylandı")
-        
+        """Adım 1: Veri kaynağı seçimi onayı"""
+        return self._ask_yes_no_left(
+            "Adım 1 - Veri Kaynağı",
+            "Veri kaynağı seçildi mi?"
+        )
+
     def step2_filter_records(self):
-        print("✅ Adım 2: Otomatik onaylandı")
-            
+        """Adım 2: Kayıt filtreleme onayı"""
+        return self._ask_yes_no_left(
+            "Adım 2 - Kayıt Filtreleme",
+            "Kayıtları filtrelemek istiyor musunuz?"
+        )
+
     def step3_preview_data(self):
-        print("✅ Adım 3: Otomatik onaylandı")
-        
+        """Adım 3: Veri önizleme bilgilendirmesi"""
+        self._show_info_left(
+            "Adım 3 - Önizleme",
+            "Önizleme tamamlandı."
+        )
+        return True
+
     def step4_set_parameters(self):
-        print("✅ Adım 4: Otomatik onaylandı")
+        """Adım 4: Parametre ayarlama onayı"""
+        return self._ask_yes_no_left(
+            "Adım 4 - Parametreler",
+            "Parametreler ayarlandı mı?"
+        )
 
     def step5_start_data_entry(self):
-        """DÜZELTME: Modal kesin açık kalacak"""
-        print("🎨 URGENT: Modal MUTLAKA açılacak!")
+        """Level 3 veri giriş modalini normal şekilde aç"""
+        print("🎨 Level 3 veri giriş modalı açılıyor")
 
-        # Önceki modal'ı temizle
-        if hasattr(self, 'data_entry_window') and self.data_entry_window:
-            try:
-                self.data_entry_window.destroy()
-            except:
-                pass
-            self.data_entry_window = None
-
-        # FORCE modal aç
-        try:
-            self.data_entry_window = tk.Toplevel(self.root)
-            self.data_entry_window.title("🔴 ZORUNLU MODAL")
-            self.data_entry_window.geometry("800x600+100+100")
-            self.data_entry_window.configure(bg='#FF0000')  # KIRMIZI
-
-            # MODAL FORCED PROPERTIES
-            self.data_entry_window.transient(self.root)
-            self.data_entry_window.grab_set()  # FORCE MODAL
-            self.data_entry_window.protocol("WM_DELETE_WINDOW", lambda: None)  # KAPATMA YASAK
-            self.data_entry_window.attributes('-topmost', True)
-
-            tk.Label(self.data_entry_window, text="🔴 ZORUNLU MODAL FORM",
-                     font=('Arial', 20, 'bold'), bg='#FF0000', fg='#FFFFFF').pack(pady=20)
-
-            self.modal_entries = {}
-            for i, (label, key) in enumerate([
-                ("Tarih:", "date_entry"),
-                ("Açıklama:", "desc_entry"),
-                ("Tutar:", "amount_entry"),
-                ("Dosya:", "file_entry")
-            ]):
-                frame = tk.Frame(self.data_entry_window, bg='#FF0000')
-                frame.pack(pady=10)
-
-                tk.Label(frame, text=label, font=('Arial', 14, 'bold'),
-                         bg='#FF0000', fg='#FFFFFF').pack(side='left', padx=20)
-
-                entry = tk.Entry(frame, font=('Arial', 14), width=50, bg='#FFFFFF')
-                entry.pack(side='left', padx=20)
-                self.modal_entries[key] = entry
-
-            save_btn = tk.Button(
-                self.data_entry_window,
-                text="💾 KAYDET",
-                command=self.save_advanced_record,
-                font=('Arial', 16, 'bold'),
-                bg='#00FF00',
-                fg='#000000',
-                width=30,
-                height=3
-            )
-            save_btn.pack(pady=30)
-
-            print("✅ ZORUNLU MODAL açıldı - KAPATILMAYACAK!")
-            return True
-
-        except Exception as e:
-            print(f"❌ MODAL AÇMA CRİTİK HATA: {e}")
-            return False
+        result = self.open_advanced_data_entry()
+        if result:
+            self._delayed_modal_confirmation()
+        return result
 
     def _delayed_modal_confirmation(self):
         """Level 3 Modal açıldıktan sonra gecikmeli onay"""
