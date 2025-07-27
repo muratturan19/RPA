@@ -113,12 +113,13 @@ class EnterpriseRPABot:
         try:
             self.gui.root.after(0, wrapper)
             # DÜZELTME: Timeout ile bekle - sonsuz bekleme önlenir
-            if done.wait(timeout=10):  # 10 saniye timeout
+            # ZAMAN AŞIMI 60 SANİYEYE ÇIKARILDI
+            if done.wait(timeout=60):  # 60 saniye timeout
                 if exception:
                     self.log_step(f"⚠️ GUI thread hatası: {exception}", 0.1)
                 return result
             else:
-                self.log_step("⚠️ GUI thread timeout", 0.1)
+                self.log_step("⚠️ GUI thread 60s timeout", 0.1)
                 return None
         except tk.TclError:
             self.log_step("⚠️ GUI thread çağırma hatası", 0.1)
@@ -296,20 +297,28 @@ class EnterpriseRPABot:
             return self._h
 
     def get_tab_widget(self, index: int):
-        """Notebook sekme koordinatlarından sanal widget döndür"""
+        """DÜZELTME: Notebook widget access"""
         if not self.gui or not hasattr(self.gui, "notebook"):
             return None
         try:
-            self.gui.notebook.update_idletasks()
-            bbox = self.gui.notebook.bbox(index)
-            if not bbox:
+            # Widget'ın varlığını kontrol et
+            self.gui.notebook.winfo_exists()
+
+            # Index geçerli mi kontrol et
+            if index >= len(self.gui.notebook.tabs()):
                 return None
-            x, y, w, h = bbox
-            rootx = self.gui.notebook.winfo_rootx() + x
-            rooty = self.gui.notebook.winfo_rooty() + y
-            return self._BBoxWidget(rootx, rooty, w, h)
-        except Exception as exc:
-            print(f"get_tab_widget error: {exc}")
+
+            # Güvenli erişim
+            tab_id = self.gui.notebook.tabs()[index]
+            bbox = self.gui.notebook.bbox(tab_id)
+
+            if bbox:
+                x, y, w, h = bbox
+                rootx = self.gui.notebook.winfo_rootx() + x
+                rooty = self.gui.notebook.winfo_rooty() + y
+                return self._BBoxWidget(rootx, rooty, w, h)
+        except Exception as e:
+            print(f"❌ Tab widget error: {e}")
             return None
         
     def move_mouse_to_widget(self, widget, smooth: bool = True):
