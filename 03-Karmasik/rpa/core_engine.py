@@ -537,51 +537,31 @@ class EnterpriseRPABot:
         return True
         
     def execute_step5_data_entry(self):
-        """Adım 5: Veri giriş başlatma - URGENT FIX"""
+        """Adım 5: Veri giriş başlatma - DÜZELTME"""
         self.log_step("🚀 Kritik Adım: Veri Giriş Modal'ı açılıyor...", 1.0)
 
-        # URGENT: Modal açılmasını bekle ve doğrula
-        modal_opened = False
-
         try:
-            # Step5'i çağır
+            # Step5'i çağır - modal aç
             result = self.call_in_gui_thread(self.gui.step5_start_data_entry)
-            print(f"step5_start_data_entry sonucu: {result}")
 
-            # Modal açılana kadar bekle - MAXIMUM 10 saniye
-            for i in range(20):  # 20 x 0.5 = 10 saniye
-                time.sleep(0.5)
+            # Modal confirmation'ı BEKLE
+            time.sleep(3)  # GUI'deki gecikme + tampon
 
-                # Modal açıldı mı kontrol et
-                if (
-                    self.gui and
-                    hasattr(self.gui, 'data_entry_window') and
-                    self.gui.data_entry_window and
-                    hasattr(self.gui, 'modal_entries') and
-                    self.gui.modal_entries
-                ):
-                    print(f"✅ Modal hazır! ({i+1}. deneme)")
-                    modal_opened = True
-                    break
-                else:
-                    print(f"⏳ Modal bekleniyor... ({i+1}/20)")
+            # Modal gerçekten açıldı mı kontrol et
+            modal_ready = self.wait_for_modal_ready(10)
 
-            if modal_opened:
-                self.log_step("✅ Modal başarıyla açıldı ve hazır", 1.0)
-            else:
-                self.log_step("❌ Modal açılamadı - TIMEOUT", 1.0)
+            if not modal_ready:
+                self.log_step("❌ Modal açılamadı", 1.0)
+                return False
+
+            self.log_step("✅ Modal başarıyla açıldı", 1.0)
+
+            # Confirmation GUI içinde alındı, burada tekrar sorma
+            return True
 
         except Exception as e:
-            self.log_step(f"❌ Modal açma kritik hatası: {e}", 1.0)
-
-        proceed = self.call_in_gui_thread(
-            self.gui._ask_yes_no_left,
-            "Devam edilsin mi?",
-            "5. Adım: Veri Giriş Başlatma",
-        )
-        if not proceed:
+            self.log_step(f"❌ Modal açma hatası: {e}", 1.0)
             return False
-        return True
         
     def execute_step6_batch_confirm(self):
         """Adım 6: Toplu onay - TEMİZ"""
