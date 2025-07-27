@@ -71,15 +71,15 @@ class Level3EnterpriseGUI:
         style.theme_use('clam')
 
         # 🪟 GLASSMORPHISM NOTEBOOK - Transparan sekme efekti
-        style.configure('Glassmorphism.TNotebook', 
+        style.configure('Glassmorphism.TNotebook',
                        tabposition='n',
-                       background='rgba(30, 30, 46, 0.7)',  # Semi-transparent
+                       background='#1e1e2e',  # Originally rgba(30,30,46,0.7)
                        borderwidth=0,
                        relief='flat')
         
         style.configure('Glassmorphism.TNotebook.Tab',
                        padding=[25, 15],
-                       background='rgba(49, 50, 68, 0.6)',  # Glass effect
+                       background='#313244',  # Originally rgba(49,50,68,0.6)
                        foreground='#cdd6f4',
                        focuscolor='none',
                        font=('Segoe UI', 11, 'bold'),
@@ -88,21 +88,21 @@ class Level3EnterpriseGUI:
         
         # ✨ HOVER GLOW EFFECT
         style.map('Glassmorphism.TNotebook.Tab',
-                  background=[('selected', 'rgba(137, 180, 250, 0.9)'),
-                            ('active', 'rgba(137, 180, 250, 0.7)')],
+                  background=[('selected', '#89b4fa'),
+                            ('active', '#89b4fa')],
                   foreground=[('selected', '#1e1e2e'),
                             ('active', '#1e1e2e')])
 
         # 🎴 3D CARD FRAMES - Depth effect
         style.configure('Glass3D.TLabelframe',
-                       background='rgba(49, 50, 68, 0.8)',
+                       background='#313244',  # Originally rgba(49,50,68,0.8)
                        foreground='#cdd6f4',
                        borderwidth=2,
                        relief='raised',  # 3D effect
                        )
         
         style.configure('Glass3D.TLabelframe.Label',
-                       background='rgba(49, 50, 68, 0.9)',
+                       background='#313244',  # Originally rgba(49,50,68,0.9)
                        foreground='#89b4fa',
                        font=('Segoe UI', 12, 'bold'))
 
@@ -558,7 +558,7 @@ class Level3EnterpriseGUI:
         
         for tab_name, tab_key in tab_configs:
             # Glassmorphism frame
-            frame = tk.Frame(self.notebook, bg='rgba(13, 17, 23, 0.9)')
+            frame = tk.Frame(self.notebook, bg='#0d1117')  # Originally rgba(13,17,23,0.9)
             self.notebook.add(frame, text=tab_name)
             self.tabs[tab_key] = frame
             
@@ -665,7 +665,7 @@ class Level3EnterpriseGUI:
         card.pack(fill='both', expand=True)
         
         # Value with glow effect
-        value_frame = tk.Frame(card, bg='rgba(49, 50, 68, 0.8)')
+        value_frame = tk.Frame(card, bg='#313244')  # Originally rgba(49,50,68,0.8)
         value_frame.pack(fill='both', expand=True)
         
         value_label = tk.Label(
