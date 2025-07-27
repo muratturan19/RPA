@@ -432,13 +432,13 @@ class EnterpriseRPABot:
         self.log_step("🎯 FAZ 2: 6 Adımlı Veri İşlem Süreci başlıyor...", 1.0)
         
         # Bu adımları sırayla çalıştır
+        # 6. adım (toplu onay) artık süreç sonunda çağrılacak
         steps = [
             ("1️⃣ Veri Kaynağı Seçimi", self.execute_step1_source_selection),
             ("2️⃣ Kayıt Filtreleme", self.execute_step2_record_filtering),
             ("3️⃣ Veri Önizleme", self.execute_step3_data_preview),
             ("4️⃣ İşlem Parametreleri", self.execute_step4_parameters),
-            ("5️⃣ Veri Giriş Başlatma", self.execute_step5_data_entry),
-            ("6️⃣ Toplu Onay İşlemi", self.execute_step6_batch_confirm)
+            ("5️⃣ Veri Giriş Başlatma", self.execute_step5_data_entry)
         ]
         
         for step_name, step_function in steps:
@@ -449,7 +449,8 @@ class EnterpriseRPABot:
                 return
             self.log_step(f"✅ {step_name} tamamlandı", 0.8)
             
-        self.log_step("✅ FAZ 2 TAMAMLANDI: 6 adımlı süreç bitti", 1.5)
+        # Toplu onay (6. adım) artık tüm dosyalar işlendiğinde yapılacak
+        self.log_step("✅ FAZ 2 TAMAMLANDI: İlk 5 adım tamamlandı", 1.5)
         
     def execute_step1_source_selection(self):
         """Adım 1: USER INPUT BEKLE"""
