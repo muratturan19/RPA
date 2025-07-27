@@ -163,7 +163,9 @@ class Level3EnterpriseGUI:
         self.particle_canvas.place(x=0, y=0, relwidth=1, relheight=1)
         
         # Send to back
-        self.particle_canvas.lower()
+        # Canvas.lower expects an item ID, so explicitly call the widget
+        # method to move the entire canvas behind other widgets
+        tk.Widget.lower(self.particle_canvas)
         
         # Generate initial particles
         self.generate_particles()
