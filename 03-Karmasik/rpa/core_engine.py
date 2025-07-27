@@ -151,6 +151,23 @@ class EnterpriseRPABot:
             except Exception:
                 pass
 
+    def _is_popup_open(self) -> bool:
+        """Pop-up açık mı kontrol et"""
+        try:
+            if not self.gui or not hasattr(self.gui, 'root'):
+                return False
+
+            for widget in self.gui.root.winfo_children():
+                if isinstance(widget, tk.Toplevel):
+                    try:
+                        widget.winfo_exists()
+                        return True
+                    except tk.TclError:
+                        continue
+            return False
+        except Exception:
+            return False
+
     def wait_for_modal_ready(self, timeout: int = 10) -> bool:
         """DÜZELTME: Modal'ın hazır olmasını bekle - Gelişmiş"""
         print(f"🔍 Modal hazır mı kontrol ediliyor... (timeout: {timeout}s)")
@@ -469,17 +486,37 @@ class EnterpriseRPABot:
         self.log_step("✅ FAZ 2 TAMAMLANDI: 6 adımlı süreç bitti", 1.5)
         
     def execute_step1_source_selection(self):
-        """Adım 1: Veri kaynağı seçimi - TEMİZ"""
+        """Adım 1: USER INPUT BEKLE"""
         print("🔵 Adım 1 başlıyor...")
-        self.call_in_gui_thread(self.gui.step1_select_source)
-        print("✅ Adım 1 tamamlandı")
+
+        user_confirmed = self.call_in_gui_thread(self.gui.step1_select_source)
+
+        timeout = 60
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            time.sleep(0.5)
+            if not self._is_popup_open():
+                break
+
+        print("✅ Adım 1 USER TARAFINDAN tamamlandı")
         return True
         
     def execute_step2_record_filtering(self):
-        """Adım 2: Kayıt filtreleme - TEMİZ"""
+        """Adım 2: YES/NO BEKLE"""
         print("🔵 Adım 2 başlıyor...")
-        self.call_in_gui_thread(self.gui.step2_filter_records)
-        print("✅ Adım 2 tamamlandı")
+
+        result = self.call_in_gui_thread(self.gui.step2_filter_records)
+
+        timeout = 60
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            time.sleep(0.5)
+            if not self._is_popup_open():
+                break
+
+        print("✅ Adım 2 USER TARAFINDAN tamamlandı")
         return True
         
     def execute_step3_data_preview(self):
@@ -537,31 +574,27 @@ class EnterpriseRPABot:
         return True
         
     def execute_step5_data_entry(self):
-        """Adım 5: Veri giriş başlatma - DÜZELTME"""
-        self.log_step("🚀 Kritik Adım: Veri Giriş Modal'ı açılıyor...", 1.0)
+        """Adım 5: MODAL AÇILMASINI BEKLE"""
+        self.log_step("🚀 Adım 5: Modal açılıyor...", 1.0)
 
-        try:
-            # Step5'i çağır - modal aç
-            result = self.call_in_gui_thread(self.gui.step5_start_data_entry)
+        self.call_in_gui_thread(self.gui.step5_start_data_entry)
 
-            # Modal confirmation'ı BEKLE
-            time.sleep(3)  # GUI'deki gecikme + tampon
+        timeout = 120
+        start_time = time.time()
 
-            # Modal gerçekten açıldı mı kontrol et
-            modal_ready = self.wait_for_modal_ready(10)
+        while time.time() - start_time < timeout:
+            time.sleep(1)
+            if self.wait_for_modal_ready(5):
+                self.log_step("✅ Modal açıldı", 0.5)
+                break
 
-            if not modal_ready:
-                self.log_step("❌ Modal açılamadı", 1.0)
-                return False
+        while time.time() - start_time < timeout:
+            time.sleep(1)
+            if not self._is_popup_open():
+                self.log_step("✅ User onayladı", 0.5)
+                break
 
-            self.log_step("✅ Modal başarıyla açıldı", 1.0)
-
-            # Confirmation GUI içinde alındı, burada tekrar sorma
-            return True
-
-        except Exception as e:
-            self.log_step(f"❌ Modal açma hatası: {e}", 1.0)
-            return False
+        return True
         
     def execute_step6_batch_confirm(self):
         """Adım 6: Toplu onay - TEMİZ"""
@@ -768,14 +801,23 @@ class EnterpriseRPABot:
     # === PHASE 4: FİNALİZASYON ===
     
     def phase4_finalization_and_reports(self):
-        """DÜZELTME: Final onay ile sonlandırma"""
-        self.log_step("🎯 FAZ 4: Sonlandırma ve raporlama...", 1.0)
+        """4. Faz: SADECE TÜM İŞLEMLER BİTTİKTEN SONRA"""
+        self.log_step("🎯 FAZ 4: GERÇEKTEN sonlandırma...", 1.0)
 
-        # 6. adımı çalıştır (toplu onay)
+        if not self.excel_files or len(self.results) == 0:
+            self.log_step("⚠️ Henüz hiç Excel işlenmedi - FAZ 4 erken!", 1.0)
+            return
+
+        processed_files = len([r for r in self.results if r.get('success', 0) > 0])
+        if processed_files == 0:
+            self.log_step("⚠️ Hiç dosya başarıyla işlenmedi - FAZ 4 erken!", 1.0)
+            return
+
+        self.log_step("✅ Gerçekten tüm işlemler bitti - FAZ 4 başlıyor", 1.0)
+
         self.log_step("✅ Adım 6: Toplu onay işlemi gerçekleştiriliyor...", 1.0)
         self.call_in_gui_thread(self.gui.step6_batch_confirm)
 
-        # İstatistikleri hesapla
         total_files = len(self.excel_files)
         total_records = self.total_records_processed
         success_rate = (
@@ -783,7 +825,6 @@ class EnterpriseRPABot:
         ) if (total_records + self.failed_records) > 0 else 0
         processing_time = time.time() - self.start_time if self.start_time else 0
 
-        # Sonuç raporu
         self.log_step("📊 SONUÇ RAPORU:", 1.0)
         self.log_step(f"   📁 İşlenen Dosya Sayısı: {total_files}", 0.3)
         self.log_step(f"   📋 Toplam Kayıt Sayısı: {total_records}", 0.3)
@@ -792,7 +833,6 @@ class EnterpriseRPABot:
         self.log_step(f"   📈 Başarı Oranı: %{success_rate:.1f}", 0.3)
         self.log_step(f"   ⏱️ Toplam Süre: {processing_time:.1f} saniye", 0.3)
 
-        # DÜZELTME: Final onay pop-up'ı
         self.show_final_completion_dialog(total_records, total_files, success_rate)
 
         self.log_step("✅ FAZ 4 TAMAMLANDI: Tüm işlemler bitti", 2.0)
