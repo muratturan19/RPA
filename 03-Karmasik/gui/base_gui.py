@@ -1139,6 +1139,8 @@ class Level3EnterpriseGUI:
             # Modal properties
             self.data_entry_window.transient(self.root)
             self.data_entry_window.attributes('-alpha', 0.95)  # Slight transparency
+            # Keep modal always on top so it doesn't disappear during RPA
+            self.data_entry_window.attributes('-topmost', True)
             self.data_entry_window.lift()
             self.data_entry_window.focus_set()
 
