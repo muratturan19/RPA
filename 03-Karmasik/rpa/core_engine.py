@@ -833,14 +833,15 @@ class EnterpriseRPABot:
         self.execute_step6_batch_confirm(total_files, total_records)
 
         # Sonuç istatistikleri
+        total_attempted = self.total_records_processed + self.total_failed_records
         success_rate = (
-            total_records / (total_records + self.total_failed_records) * 100
-        ) if (total_records + self.total_failed_records) > 0 else 0
+            total_records / total_attempted * 100
+        ) if total_attempted > 0 else 0
         processing_time = time.time() - self.start_time if self.start_time else 0
 
         self.log_step("📊 SONUÇ RAPORU:", 1.0)
         self.log_step(f"   📁 İşlenen Dosya Sayısı: {total_files}", 0.3)
-        self.log_step(f"   📋 Toplam Kayıt Sayısı: {total_records}", 0.3)
+        self.log_step(f"   📋 Toplam Kayıt Sayısı: {total_attempted}", 0.3)
         self.log_step(f"   ✅ Başarılı İşlemler: {total_records}", 0.3)
         self.log_step(f"   ❌ Başarısız İşlemler: {self.total_failed_records}", 0.3)
         self.log_step(f"   📈 Başarı Oranı: %{success_rate:.1f}", 0.3)
