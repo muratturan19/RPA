@@ -603,12 +603,7 @@ class EnterpriseRPABot:
                 self.log_step("✅ User onayladı", 0.5)
                 break
 
-        # Örnek kayıt varsa otomatik doldur
-        if self.gui and getattr(self.gui, 'current_records', None):
-            sample = self.gui.current_records[0]
-            self.process_single_record(sample, 1, 1)
-            self.call_in_gui_thread(self.gui.close_modal)
-
+        # Adım 5 sonunda modal açık bırakılır
         return True
         
     def execute_step6_batch_confirm(self):
@@ -849,6 +844,10 @@ class EnterpriseRPABot:
         self.log_step(f"   ⏱️ Toplam Süre: {processing_time:.1f} saniye", 0.3)
 
         self.show_final_completion_dialog(total_records, total_files, success_rate)
+
+        # Opsiyonel: Modal hâlâ açıksa kapat
+        if self.gui and getattr(self.gui, 'data_entry_window', None):
+            self.call_in_gui_thread(self.gui.close_modal)
 
         self.log_step("✅ FAZ 4 TAMAMLANDI: Tüm işlemler bitti", 2.0)
 
