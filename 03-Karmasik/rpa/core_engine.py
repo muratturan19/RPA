@@ -782,7 +782,7 @@ class EnterpriseRPABot:
                     self.click_widget_simulation("Kaydet butonu", save_button, delay=0.5)
 
                 result = self.call_in_gui_thread(self.gui.save_advanced_record)
-                if result is None:
+                if result is False:
                     self.log_step("⚠️ Kaydetme işlemi başarısız", 0.3)
                     self.total_failed_records += 1
                     return False
@@ -800,8 +800,8 @@ class EnterpriseRPABot:
             self.total_failed_records += 1
             return False
             
-    def fill_entry_field(self, entry_widget, value: str):
-        """Entry alanını güvenli şekilde doldur"""
+    def fill_entry_field(self, entry_widget, value: str) -> bool:
+        """Entry alanını güvenli şekilde doldur."""
         try:
             entry_widget.delete(0, tk.END)
             entry_widget.insert(0, value)
