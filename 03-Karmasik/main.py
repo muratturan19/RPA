@@ -444,6 +444,26 @@ def main() -> None:
             print("RESULTS_JSON:", json.dumps(results))
             return
 
+        # Komut satırından çalışma modu belirtildiyse etkileşimli menüyü atla
+        if args.mode and args.mode != "terminal":
+            if args.mode == "gui":
+                start_gui_only()
+            elif args.mode == "rpa":
+                start_rpa_only()
+            elif args.mode == "both":
+                start_both_integrated()
+            elif args.mode == "streamlit":
+                streamlit_process = start_streamlit_server(args.port)
+                if streamlit_process:
+                    print(f"🌍 Tarayıcıda açın: http://localhost:{args.port}")
+                    print("⏹️ Durdurmak için Ctrl+C basın")
+                    try:
+                        streamlit_process.wait()
+                    except KeyboardInterrupt:
+                        print("\n🛑 Streamlit durduruldu")
+                        streamlit_process.terminate()
+            return
+
         # Normal terminal menü modu
         while True:
             print("\n" + "="*70)
