@@ -26,7 +26,7 @@ class AdvancedRPABot:
             self.gui.update_status(f"RPA: {message}")
         time.sleep(delay)
 
-    def call_in_gui_thread(self, func, *args, **kwargs):
+    def call_in_gui_thread(self, func, *args, timeout=None, **kwargs):
         """Tkinter ana döngüsünde fonksiyon çalıştır"""
         if not self.gui:
             return
@@ -39,7 +39,7 @@ class AdvancedRPABot:
                 done.set()
 
         self.gui.root.after(0, wrapper)
-        done.wait()
+        done.wait(timeout)
         
     def click_simulation(self, widget_name, delay=0.5):
         """Widget tıklama simülasyonu"""
