@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 ## Çalıştırma
 
-Komut satırından `main.py` dosyasını çalıştırarak sistemi başlatabilirsiniz. Program açıldığında aşağıdaki seçenekleri içeren bir menü gelir:
+Komut satırından `main.py` dosyasını çalıştırarak menülü sistemi başlatabilirsiniz. Program açıldığında aşağıdaki seçenekleri içeren bir menü gelir:
 
 1. Sadece gelişmiş GUI'yi başlatır.
 2. GUI açıkken yalnızca RPA botunu çalıştırır.
@@ -26,7 +26,7 @@ python main.py
 
 Sadece Streamlit panelini başlatmak isterseniz:
 ```bash
-python main.py --mode streamlit
+streamlit run app.py
 ```
 
 Streamlit paneli üzerinden Excel dosyalarını yükleyip işle başlatabilirsiniz. Panel, `app.py` dosyasında tanımlıdır ve arka planda `main.py` üzerinden RPA botunu tetikler.
