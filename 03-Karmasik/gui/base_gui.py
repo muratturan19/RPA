@@ -1592,8 +1592,19 @@ class Level3EnterpriseGUI:
         )
         # Modal artık RPA motoru tarafından açılacak
         return True
-    def step6_batch_confirm(self):
-        print("✅ Adım 6: Otomatik onaylandı")
+
+    def step6_batch_confirm(self, file_count: int = None, record_count: int = None):
+        if file_count is not None and record_count is not None:
+            self._show_info_left(
+                "İşlem Tamamlandı!",
+                f"RPA işlemi başarıyla tamamlandı!\n\n📁 İşlenen dosya sayısı: {file_count}\n📋 İşlenen kayıt sayısı: {record_count}\n\nTüm veriler dashboard'a aktarıldı."
+            )
+        else:
+            self._show_info_left(
+                "Adım 6 - Toplu Onay",
+                "Toplu onay işlemi tamamlandı."
+            )
+        return True
 
     # Utility functions (orijinal fonksiyonellik korunuyor)
     def update_process_status(self, message):
