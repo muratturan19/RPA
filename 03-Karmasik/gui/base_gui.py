@@ -1573,32 +1573,20 @@ class Level3EnterpriseGUI:
         return True
 
     def step5_start_data_entry(self):
-        """Level 3 veri giriş modalini normal şekilde aç"""
+        """Level 3 veri giriş modalini açmadan önce onay al"""
         print("🎨 Level 3 veri giriş modalı açılıyor")
 
-        result = self.open_advanced_data_entry()
-        if result:
-            self._delayed_modal_confirmation()
-        return result
+        proceed = self._ask_yes_no_left(
+            "RPA Başlat",
+            "RPA başlasın mı?",
+        )
 
-    def _delayed_modal_confirmation(self):
-        """Level 3 Modal açıldıktan sonra gecikmeli onay"""
-        try:
-            proceed = self._ask_yes_no_left(
-                "Level 3 Veri Girişi Onayı",
-                f"Level 3 Modal başarıyla açıldı.\n\n📊 {len(self.current_records) if self.current_records else 0} kayıt işlenecek.\n\n🎨 RPA ile otomatik veri girişi başlatılsın mı?"
-            )
-            
-            if proceed:
-                self.update_process_status("✅ Kullanıcı onayladı - Level 3 RPA başlayabilir")
-            else:
-                self.update_process_status("⏹️ Kullanıcı iptal etti")
-                if self.data_entry_window:
-                    self.close_modal()
-                    
-        except Exception as e:
-            print(f"❌ Level 3 Gecikmeli onay hatası: {e}")
-            
+        if not proceed:
+            self.update_process_status("⏹️ Kullanıcı iptal etti")
+            return False
+
+        self.update_process_status("✅ Kullanıcı onayladı - Level 3 RPA başlayabilir")
+        return self.open_advanced_data_entry()            
     def step6_batch_confirm(self):
         print("✅ Adım 6: Otomatik onaylandı")
 
