@@ -1543,10 +1543,11 @@ class Level3EnterpriseGUI:
     # Step functions (orijinal fonksiyonellik korunuyor)
     def step1_select_source(self):
         """Adım 1: Veri kaynağı seçimi onayı"""
-        return self._ask_yes_no_left(
+        self._show_info_left(
             "Adım 1 - Veri Kaynağı",
-            "Veri kaynağı seçildi mi?"
+            "Veri kaynağı seçildi",
         )
+        return True
 
     def step2_filter_records(self):
         """Adım 2: Kayıt filtreleme onayı"""
