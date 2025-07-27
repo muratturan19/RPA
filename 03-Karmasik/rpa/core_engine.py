@@ -414,48 +414,6 @@ class EnterpriseRPABot:
             return None
         return None
         
-    # === PHASE 1: KARMAŞIK GUI NAVİGASYONU ===
-    
-    def phase1_navigate_to_finance_module(self):
-        """1. Faz: Finans modülüne karmaşık navigasyon"""
-        self.log_step("🎯 FAZ 1: Finans-Tahsilat modülüne navigasyon başlıyor...", 1.0)
-
-        # Pencereyi öne getir ve mouse hareketlerini göster
-        self.call_in_gui_thread(self.focus_window)
-
-        tab_keys = {
-            0: "dashboard",
-            1: "accounting",
-            2: "finance",
-            3: "inventory",
-            4: "reports",
-            5: "system",
-        }
-
-        # 0 - Dashboard sekmesine tıkla
-        dashboard_widget = self.get_tab_widget(0)
-        self.click_widget_simulation("Dashboard sekmesi", dashboard_widget, call_after=False)
-        self.call_in_gui_thread(self.gui.notebook.select, 0)
-
-        # Düzensiz bir rota için 4 farklı sekmeyi rastgele seç
-        available_indices = list(tab_keys.keys())
-        if 0 in available_indices:
-            available_indices.remove(0)
-
-        random_tabs = random.sample(available_indices, 4)
-
-        for idx in random_tabs:
-            name = tab_keys.get(idx, f"Tab {idx}")
-            widget = self.get_tab_widget(idx)
-            self.click_widget_simulation(f"{name} sekmesi", widget, call_after=False)
-            self.call_in_gui_thread(self.gui.notebook.select, idx)
-
-        # En son Dashboard sekmesine geri dön
-        self.log_step("↩️ Dashboard sekmesine dönülüyor...", 0.5)
-        self.click_widget_simulation("Dashboard sekmesi", dashboard_widget, call_after=False)
-        self.call_in_gui_thread(self.gui.notebook.select, 0)
-
-        self.log_step("✅ FAZ 1 TAMAMLANDI: Navigasyon tamamlandı", 1.0)
         
     def phase2_execute_6_step_process(self):
         """2. Faz: 6 adımlı süreç navigasyonu"""
@@ -554,10 +512,58 @@ class EnterpriseRPABot:
         return True
         
     def execute_step5_data_entry(self):
-        """Adım 5: MODAL AÇILMASINI BEKLE"""
-        self.log_step("🚀 Adım 5: Modal açılıyor...", 1.0)
+        """Adım 5: Kullanıcı onayı, sekme navigasyonu ve modal açma"""
+        self.log_step("🚀 Adım 5: Kullanıcı onayı bekleniyor...", 1.0)
 
-        self.call_in_gui_thread(self.gui.step5_start_data_entry, timeout=None)
+        proceed = self.call_in_gui_thread(
+            self.gui.step5_start_data_entry, timeout=None
+        )
+
+        if not proceed:
+            self.log_step("⏹️ Kullanıcı iptal etti", 0.5)
+            return False
+
+        # Rastgele sekme navigasyonu
+        self.log_step("🔀 Sekmeler arasında rastgele geziliyor...", 0.5)
+        self.call_in_gui_thread(self.focus_window)
+
+        tab_keys = {
+            0: "dashboard",
+            1: "accounting",
+            2: "finance",
+            3: "inventory",
+            4: "reports",
+            5: "system",
+        }
+
+        dashboard_widget = self.get_tab_widget(0)
+        self.click_widget_simulation(
+            "Dashboard sekmesi", dashboard_widget, call_after=False
+        )
+        self.call_in_gui_thread(self.gui.notebook.select, 0)
+
+        available_indices = list(tab_keys.keys())
+        if 0 in available_indices:
+            available_indices.remove(0)
+
+        random_tabs = random.sample(available_indices, 4)
+        for idx in random_tabs:
+            name = tab_keys.get(idx, f"Tab {idx}")
+            widget = self.get_tab_widget(idx)
+            self.click_widget_simulation(
+                f"{name} sekmesi", widget, call_after=False
+            )
+            self.call_in_gui_thread(self.gui.notebook.select, idx)
+
+        self.log_step("↩️ Dashboard sekmesine dönülüyor...", 0.5)
+        self.click_widget_simulation(
+            "Dashboard sekmesi", dashboard_widget, call_after=False
+        )
+        self.call_in_gui_thread(self.gui.notebook.select, 0)
+
+        # Modal aç
+        self.log_step("🪟 Modal açılıyor...", 0.5)
+        self.call_in_gui_thread(self.gui.open_advanced_data_entry, timeout=None)
 
         timeout = 120
         start_time = time.time()
@@ -845,9 +851,6 @@ class EnterpriseRPABot:
             self.start_time = time.time()
             self.log_step("🚀 KARMAŞIK RPA SİSTEMİ BAŞLATILUYOR...", 2.0)
             self.log_step("🎯 Enterprise seviye otomasyon - 4 fazlı süreç", 1.0)
-            
-            # FAZ 1: GUI Navigasyonu
-            self.phase1_navigate_to_finance_module()
             
             # FAZ 2: 6 Adımlı Süreç
             self.phase2_execute_6_step_process()

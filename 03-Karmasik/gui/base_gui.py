@@ -1573,7 +1573,7 @@ class Level3EnterpriseGUI:
         return True
 
     def step5_start_data_entry(self):
-        """Level 3 veri giriş modalini açmadan önce onay al"""
+        """Level 3 veri girişi öncesi kullanıcı onayı"""
         print("🎨 Level 3 veri giriş modalı açılıyor")
 
         proceed = self._ask_yes_no_left(
@@ -1585,8 +1585,11 @@ class Level3EnterpriseGUI:
             self.update_process_status("⏹️ Kullanıcı iptal etti")
             return False
 
-        self.update_process_status("✅ Kullanıcı onayladı - Level 3 RPA başlayabilir")
-        return self.open_advanced_data_entry()            
+        self.update_process_status(
+            "✅ Kullanıcı onayladı - Level 3 RPA başlayabilir"
+        )
+        # Modal artık RPA motoru tarafından açılacak
+        return True
     def step6_batch_confirm(self):
         print("✅ Adım 6: Otomatik onaylandı")
 
