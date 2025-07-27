@@ -67,17 +67,29 @@ class EnterpriseRPABot:
         time.sleep(actual_delay)
 
     def call_in_gui_thread(self, func, *args, **kwargs):
-        """Tkinter ana döngüsünde güvenli fonksiyon çalıştırma"""
+        """DÜZELTME: Tkinter ana döngüsünde güvenli fonksiyon çalıştırma"""
         if not self.gui or not hasattr(self.gui, 'root'):
+            self.log_step("⚠️ GUI referansı mevcut değil", 0.1)
             return None
 
-        # Widget kontrolü
-        if args and hasattr(args[0], 'winfo_exists'):
-            try:
-                args[0].winfo_exists()
-            except tk.TclError:
-                self.log_step("⚠️ Widget artık mevcut değil", 0.1)
-                return None
+        # DÜZELTME: Root window kontrolü
+        try:
+            self.gui.root.winfo_exists()
+        except tk.TclError:
+            self.log_step("⚠️ Ana pencere mevcut değil", 0.1)
+            return None
+
+        # DÜZELTME: Widget varlık kontrolü - daha güvenli
+        if args:
+            for arg in args:
+                if hasattr(arg, 'winfo_exists'):
+                    try:
+                        if not arg.winfo_exists():
+                            self.log_step("⚠️ Widget artık mevcut değil", 0.1)
+                            return None
+                    except (tk.TclError, AttributeError):
+                        self.log_step("⚠️ Widget kontrol hatası", 0.1)
+                        return None
 
         done = threading.Event()
         result = None
@@ -87,24 +99,26 @@ class EnterpriseRPABot:
             nonlocal result, exception
             try:
                 result = func(*args, **kwargs)
+            except tk.TclError as e:
+                exception = f"TclError: {e}"
             except Exception as e:
-                exception = e
+                exception = f"Genel Hata: {e}"
             finally:
                 done.set()
 
-        # Root kontrolü
         try:
-            self.gui.root.winfo_exists()
             self.gui.root.after(0, wrapper)
-            # Adım içi onay gerektiren pop-up'lar için süre sınırı olmadan bekle
-            done.wait()
+            # DÜZELTME: Timeout ile bekle - sonsuz bekleme önlenir
+            if done.wait(timeout=10):  # 10 saniye timeout
+                if exception:
+                    self.log_step(f"⚠️ GUI thread hatası: {exception}", 0.1)
+                return result
+            else:
+                self.log_step("⚠️ GUI thread timeout", 0.1)
+                return None
         except tk.TclError:
-            self.log_step("⚠️ Ana pencere mevcut değil", 0.1)
+            self.log_step("⚠️ GUI thread çağırma hatası", 0.1)
             return None
-
-        if exception:
-            self.log_step(f"⚠️ GUI thread hatası: {exception}", 0.1)
-        return result
 
     def focus_window(self):
         """GUI penceresini öne getir"""
@@ -134,64 +148,109 @@ class EnterpriseRPABot:
                 pass
 
     def wait_for_modal_ready(self, timeout: int = 10) -> bool:
-        """URGENT FIX: Modal'ın hazır olmasını bekle"""
+        """DÜZELTME: Modal'ın hazır olmasını bekle - Gelişmiş"""
         print(f"🔍 Modal hazır mı kontrol ediliyor... (timeout: {timeout}s)")
 
         start_time = time.time()
         attempt = 0
+        last_error = None
 
         while time.time() - start_time < timeout:
             attempt += 1
 
-            # Detaylı kontrol
-            if not self.gui:
-                print(f"❌ GUI yok (deneme {attempt})")
-                time.sleep(0.5)
+            try:
+                # DÜZELTME: Adım adım detaylı kontrol
+                if not self.gui:
+                    last_error = "GUI yok"
+                    time.sleep(0.2)
+                    continue
+
+                if not hasattr(self.gui, 'data_entry_window'):
+                    last_error = "data_entry_window attribute yok"
+                    time.sleep(0.2)
+                    continue
+
+                if not self.gui.data_entry_window:
+                    last_error = "data_entry_window None"
+                    time.sleep(0.2)
+                    continue
+
+                # DÜZELTME: Widget varlık kontrolü
+                try:
+                    self.gui.data_entry_window.winfo_exists()
+                except tk.TclError:
+                    last_error = "data_entry_window widget mevcut değil"
+                    time.sleep(0.2)
+                    continue
+
+                if not hasattr(self.gui, 'modal_entries'):
+                    last_error = "modal_entries attribute yok"
+                    time.sleep(0.2)
+                    continue
+
+                if not self.gui.modal_entries:
+                    last_error = "modal_entries None"
+                    time.sleep(0.2)
+                    continue
+
+                # DÜZELTME: Her entry widget'ını kontrol et
+                entries_ok = True
+                for key, entry in self.gui.modal_entries.items():
+                    try:
+                        entry.winfo_exists()
+                    except (tk.TclError, AttributeError):
+                        last_error = f"Entry widget {key} mevcut değil"
+                        entries_ok = False
+                        break
+
+                if not entries_ok:
+                    time.sleep(0.2)
+                    continue
+
+                # Tüm kontroller geçti!
+                print(f"✅ Modal hazır! (deneme {attempt})")
+                self.log_step("✅ Modal form hazır", 0.5)
+                return True
+
+            except Exception as e:
+                last_error = f"Kontrol hatası: {e}"
+                time.sleep(0.2)
                 continue
 
-            if not hasattr(self.gui, 'data_entry_window'):
-                print(f"❌ data_entry_window attribute yok (deneme {attempt})")
-                time.sleep(0.5)
-                continue
-
-            if not self.gui.data_entry_window:
-                print(f"❌ data_entry_window None (deneme {attempt})")
-                time.sleep(0.5)
-                continue
-
-            if not hasattr(self.gui, 'modal_entries'):
-                print(f"❌ modal_entries attribute yok (deneme {attempt})")
-                time.sleep(0.5)
-                continue
-
-            if not self.gui.modal_entries:
-                print(f"❌ modal_entries None (deneme {attempt})")
-                time.sleep(0.5)
-                continue
-
-            # Tüm kontroller geçti!
-            print(f"✅ Modal hazır! (deneme {attempt})")
-            self.log_step("✅ Modal form hazır", 0.5)
-            return True
-
-        print(f"❌ Modal timeout! ({timeout}s)")
+        print(f"❌ Modal timeout! ({timeout}s) - Son hata: {last_error}")
         return False
 
     def find_modal_form(self):
-        """Modal formu güvenli şekilde bul"""
+        """DÜZELTME: Modal formu güvenli şekilde bul"""
         if not self.gui:
             return None
 
-        if not hasattr(self.gui, 'data_entry_window') or not self.gui.data_entry_window:
-            return None
-
-        if not hasattr(self.gui, 'modal_entries') or not self.gui.modal_entries:
-            return None
-
         try:
+            # DÜZELTME: Adım adım güvenli kontrol
+            if not hasattr(self.gui, 'data_entry_window') or not self.gui.data_entry_window:
+                return None
+
+            # Widget varlığını kontrol et
             self.gui.data_entry_window.winfo_exists()
+
+            if not hasattr(self.gui, 'modal_entries') or not self.gui.modal_entries:
+                return None
+
+            # Her entry'yi kontrol et
+            for key, entry in self.gui.modal_entries.items():
+                try:
+                    entry.winfo_exists()
+                except (tk.TclError, AttributeError):
+                    self.log_step(f"⚠️ Entry {key} mevcut değil", 0.1)
+                    return None
+
             return self.gui.modal_entries
+
         except tk.TclError:
+            self.log_step("⚠️ Modal form kontrol hatası", 0.1)
+            return None
+        except Exception as e:
+            self.log_step(f"⚠️ Modal form bulma hatası: {e}", 0.1)
             return None
 
     class _BBoxWidget:

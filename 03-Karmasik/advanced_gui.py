@@ -462,34 +462,62 @@ class EnterpriseGUI:
 
     def step5_start_data_entry(self):
         """5. Adım: VERİ GİRİŞ BAŞLAT - URGENT FIX"""
-        print("🚀 step5_start_data_entry çağrıldı!")  # Debug log
+        print("🚀 step5_start_data_entry çağrıldı!")
         self.update_process_status("🚀 5. Adım: Veri giriş sistemi başlatılıyor...")
 
-        # Onay dialog'u - BU KISMINDA SORUN VAR!
+        # DÜZELTME: Karmaşık onay akışını basitleştir
         record_count = len(self.current_records) if self.current_records else 0
-
-        # URGENT: Dialog'u basitleştir, direkt modal aç
         print(f"📊 Kayıt sayısı: {record_count}")
 
-        # URGENT: Onay dialog'unu geç, direkt modal aç
-        self.update_process_status("✅ 5. Adım onaylandı - Veri Giriş Modal'ı açılıyor...")
+        # DÜZELTME: Direkt modal aç - onay dialog'u sonraya bırak
+        self.update_process_status("✅ Modal açılıyor...")
 
-        # URGENT: Hemen modal'ı aç - gecikme yok!
         try:
             print("🎯 Modal açılmaya çalışılıyor...")
-            self.open_advanced_data_entry()
-            print("✅ Modal açıldı!")
 
-            # Modal açıldığını doğrula
-            if self.data_entry_window and hasattr(self, 'modal_entries'):
-                print("✅ Modal entries de mevcut!")
+            # DÜZELTME: Modal açmadan önce önceki modal'ı temizle
+            if hasattr(self, 'data_entry_window') and self.data_entry_window:
+                try:
+                    self.data_entry_window.destroy()
+                except:
+                    pass
+                self.data_entry_window = None
+
+            # DÜZELTME: Modal'ı güvenli şekilde aç
+            modal_success = self.open_advanced_data_entry()
+
+            if modal_success:
+                print("✅ Modal başarıyla açıldı!")
                 self.update_process_status("✅ Modal hazır - RPA işleme başlayabilir")
+
+                # DÜZELTME: Modal açıldıktan SONRA onay iste
+                self.root.after(1000, self._delayed_modal_confirmation)
             else:
-                print("❌ Modal açıldı ama entries mevcut değil!")
+                print("❌ Modal açılamadı!")
+                self.update_process_status("❌ Modal açma hatası")
 
         except Exception as e:
             print(f"❌ Modal açma hatası: {e}")
             self.update_process_status(f"❌ Modal açma hatası: {e}")
+
+    def _delayed_modal_confirmation(self):
+        """Modal açıldıktan sonra gecikmeli onay"""
+        try:
+            proceed = self._ask_yes_no_left(
+                "Veri Girişi Onayı",
+                f"Modal başarıyla açıldı.\n\n📊 {len(self.current_records) if self.current_records else 0} kayıt işlenecek.\n\nRPA ile otomatik veri girişi başlatılsın mı?"
+            )
+
+            if proceed:
+                self.update_process_status("✅ Kullanıcı onayladı - RPA başlayabilir")
+            else:
+                self.update_process_status("⏹️ Kullanıcı iptal etti")
+                if self.data_entry_window:
+                    self.data_entry_window.destroy()
+                    self.data_entry_window = None
+
+        except Exception as e:
+            print(f"❌ Gecikmeli onay hatası: {e}")
 
     def signal_modal_ready_to_rpa(self):
         """RPA'ya modal hazır sinyali gönder"""
@@ -501,47 +529,50 @@ class EnterpriseGUI:
         self._show_info_left("Adım 6", "Tüm kayıtlar onaylandı ve sisteme kaydedildi!")
         self.update_process_status("\U0001f389 6. Adım tamamlandı - İşlem süreci bitti!")
         
-    def open_advanced_data_entry(self):
-        """URGENT FIX: Gelişmiş Veri Giriş Modal'ı"""
+    def open_advanced_data_entry(self) -> bool:
+        """DÜZELTME: Gelişmiş Veri Giriş Modal'ı - Güvenli Açma"""
         print("🚀 open_advanced_data_entry çağrıldı!")
         self.update_status("🚀 Gelişmiş Veri Giriş sistemi açılıyor...")
 
-        # URGENT: Önceki modal'ı kapat
-        if hasattr(self, 'data_entry_window') and self.data_entry_window:
-            try:
-                self.data_entry_window.destroy()
-            except:
-                pass
-            self.data_entry_window = None
+        try:
+            # Modal pencere
+            self.data_entry_window = tk.Toplevel(self.root)
+            self.data_entry_window.title("🎯 Gelişmiş Veri Giriş Sistemi")
+            self.data_entry_window.geometry("600x450+100+100")
 
-        # Modal pencere
-        self.data_entry_window = tk.Toplevel(self.root)
-        self.data_entry_window.title("🎯 Gelişmiş Veri Giriş Sistemi")
+            # Modal ayarları
+            self.data_entry_window.transient(self.root)
+            self.data_entry_window.lift()
+            self.data_entry_window.focus_set()
 
-        # URGENT: Basit boyut ve konum
-        self.data_entry_window.geometry("600x450+100+100")
+            print("🎯 Modal pencere oluşturuldu, içerik ekleniyor...")
 
-        # URGENT: Basit modal ayarları
-        self.data_entry_window.transient(self.root)
-        self.data_entry_window.lift()
-        self.data_entry_window.focus_set()
+            # Modal içeriği
+            self.create_advanced_modal_content()
 
-        print("🎯 Modal pencere oluşturuldu, içerik ekleniyor...")
+            # DÜZELTME: Modal'ın gerçekten hazır olduğunu doğrula
+            self.root.update_idletasks()
+            self.data_entry_window.update_idletasks()
 
-        # Modal içeriği
-        self.create_advanced_modal_content()
+            # DÜZELTME: Entry widget'larının varlığını kontrol et
+            if hasattr(self, 'modal_entries') and self.modal_entries:
+                # Her entry widget'ını test et
+                for key, entry in self.modal_entries.items():
+                    try:
+                        entry.winfo_exists()
+                    except tk.TclError:
+                        print(f"❌ Entry widget {key} mevcut değil!")
+                        return False
 
-        print("✅ Modal içerik eklendi!")
+                print("✅ Tüm modal entries hazır!")
+                self.update_status("✅ Modal başarıyla açıldı ve hazır")
+                return True
+            else:
+                print("❌ modal_entries hazır değil!")
+                return False
 
-        # URGENT: Modal'ın gerçekten hazır olduğunu doğrula
-        self.root.update_idletasks()
-
-        if hasattr(self, 'modal_entries') and self.modal_entries:
-            print("✅ modal_entries hazır!")
-            self.update_status("✅ Modal başarıyla açıldı ve hazır")
-            return True
-        else:
-            print("❌ modal_entries hazır değil!")
+        except Exception as e:
+            print(f"❌ Modal açma kritik hatası: {e}")
             return False
         
     def create_advanced_modal_content(self):
