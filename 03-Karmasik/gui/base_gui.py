@@ -1565,11 +1565,12 @@ class Level3EnterpriseGUI:
         return True
 
     def step4_set_parameters(self):
-        """Adım 4: Parametre ayarlama onayı"""
-        return self._ask_yes_no_left(
+        """Adım 4: Parametre ayarlama bilgilendirmesi"""
+        self._show_info_left(
             "Adım 4 - Parametreler",
-            "Parametreler ayarlandı mı?"
+            "Parametreler ayarlandı."
         )
+        return True
 
     def step5_start_data_entry(self):
         """Level 3 veri giriş modalini normal şekilde aç"""
