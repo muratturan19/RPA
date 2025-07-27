@@ -509,7 +509,7 @@ class EnterpriseRPABot:
                 break
 
         print("✅ Adım 1 USER TARAFINDAN tamamlandı")
-        return True
+        return bool(user_confirmed)
         
     def execute_step2_record_filtering(self):
         """Adım 2: YES/NO BEKLE"""
@@ -526,7 +526,7 @@ class EnterpriseRPABot:
                 break
 
         print("✅ Adım 2 USER TARAFINDAN tamamlandı")
-        return True
+        return bool(result)
         
     def execute_step3_data_preview(self):
         """Adım 3: Veri önizleme - TEMİZ"""
@@ -602,6 +602,12 @@ class EnterpriseRPABot:
             if not self._is_popup_open():
                 self.log_step("✅ User onayladı", 0.5)
                 break
+
+        # Örnek kayıt varsa otomatik doldur
+        if self.gui and getattr(self.gui, 'current_records', None):
+            sample = self.gui.current_records[0]
+            self.process_single_record(sample, 1, 1)
+            self.call_in_gui_thread(self.gui.close_modal)
 
         return True
         
