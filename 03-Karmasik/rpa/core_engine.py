@@ -438,37 +438,25 @@ class EnterpriseRPABot:
         self.click_widget_simulation("Dashboard sekmesi", dashboard_widget, call_after=False)
         self.call_in_gui_thread(self.gui.notebook.select, 0)
 
-        # Sırayla Muhasebe(1), Stok(3), Raporlar(4), Sistem(5)
-        sequence = [
-            (1, "Muhasebe"),
-            (3, "Stok"),
-            (4, "Raporlar"),
-            (5, "Sistem"),
-        ]
+        # Düzensiz bir rota için 4 farklı sekmeyi rastgele seç
+        available_indices = list(tab_keys.keys())
+        if 0 in available_indices:
+            available_indices.remove(0)
 
-        for idx, name in sequence:
+        random_tabs = random.sample(available_indices, 4)
+
+        for idx in random_tabs:
+            name = tab_keys.get(idx, f"Tab {idx}")
             widget = self.get_tab_widget(idx)
             self.click_widget_simulation(f"{name} sekmesi", widget, call_after=False)
             self.call_in_gui_thread(self.gui.notebook.select, idx)
 
-        # Son olarak Finans-Tahsilat(2)
-        finance_widget = self.get_tab_widget(2)
-        self.click_widget_simulation("Finans-Tahsilat sekmesi", finance_widget, call_after=False)
-        self.call_in_gui_thread(self.gui.notebook.select, 2)
-
-        # Veri Giriş modal'ını aç
-        self.log_step("🚀 Veri Giriş modal'ı açılıyor...", 0.8)
-        self.log_step("⏳ Modal yükleniyor...", 1.0)
-
-        # Dashboard sekmesine geri dön (modal açık kalsın)
-        self.log_step("↩️ Dashboard sekmesine dönülüyor (modal açık)...", 0.5)
+        # En son Dashboard sekmesine geri dön
+        self.log_step("↩️ Dashboard sekmesine dönülüyor...", 0.5)
         self.click_widget_simulation("Dashboard sekmesi", dashboard_widget, call_after=False)
         self.call_in_gui_thread(self.gui.notebook.select, 0)
 
-        # Veri girişi başlat
-        self.log_step("🚀 Veri girişi başlatılıyor...", 0.5)
-
-        self.log_step("✅ FAZ 1 TAMAMLANDI: Navigasyon ve modal hazır", 1.0)
+        self.log_step("✅ FAZ 1 TAMAMLANDI: Navigasyon tamamlandı", 1.0)
         
     def phase2_execute_6_step_process(self):
         """2. Faz: 6 adımlı süreç navigasyonu"""
