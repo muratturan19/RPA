@@ -170,6 +170,16 @@ class EnterpriseRPABot:
         except Exception:
             return False
 
+    def wait_for_popup_close(self, timeout: int = 30) -> bool:
+        """Pop-up kapanana kadar bekle"""
+        start_time = time.time()
+        while self._is_popup_open():
+            if time.time() - start_time > timeout:
+                self.log_step("⚠️ Pop-up kapanma süresi aşıldı", 0.1)
+                return False
+            time.sleep(0.2)
+        return True
+
     def wait_for_modal_ready(self, timeout: int = 10) -> bool:
         """DÜZELTME: Modal'ın hazır olmasını bekle - Gelişmiş"""
         print(f"🔍 Modal hazır mı kontrol ediliyor... (timeout: {timeout}s)")
@@ -446,6 +456,7 @@ class EnterpriseRPABot:
         print("🔵 Adım 1 başlıyor...")
 
         user_confirmed = self.call_in_gui_thread(self.gui.step1_select_source, timeout=None)
+        self.wait_for_popup_close()
 
         print("✅ Adım 1 USER TARAFINDAN tamamlandı")
         return bool(user_confirmed)
@@ -455,6 +466,7 @@ class EnterpriseRPABot:
         print("🔵 Adım 2 başlıyor...")
 
         result = self.call_in_gui_thread(self.gui.step2_filter_records, timeout=None)
+        self.wait_for_popup_close()
 
         print("✅ Adım 2 USER TARAFINDAN tamamlandı")
         return bool(result)
@@ -470,6 +482,7 @@ class EnterpriseRPABot:
             self.call_in_gui_thread(self.gui.set_current_records, preview_records, timeout=None)
 
         self.call_in_gui_thread(self.gui.step3_preview_data, timeout=None)
+        self.wait_for_popup_close()
         print("✅ Adım 3 tamamlandı")
         return True
 
@@ -510,6 +523,7 @@ class EnterpriseRPABot:
         """Adım 4: İşlem parametreleri - TEMİZ"""
         print("🔵 Adım 4 başlıyor...")
         self.call_in_gui_thread(self.gui.step4_set_parameters, timeout=None)
+        self.wait_for_popup_close()
         print("✅ Adım 4 tamamlandı")
         return True
         
@@ -520,6 +534,7 @@ class EnterpriseRPABot:
         proceed = self.call_in_gui_thread(
             self.gui.step5_start_data_entry, timeout=None
         )
+        self.wait_for_popup_close()
 
         if not proceed:
             self.log_step("⏹️ Kullanıcı iptal etti", 0.5)
@@ -579,10 +594,11 @@ class EnterpriseRPABot:
         # Adım 5 sonunda modal açık bırakılır
         return True
         
-    def execute_step6_batch_confirm(self):
-        """Adım 6: Toplu onay - TEMİZ"""
+    def execute_step6_batch_confirm(self, file_count: int = None, record_count: int = None):
+        """Adım 6: Toplu onay"""
         print("🔵 Adım 6 başlıyor...")
-        self.call_in_gui_thread(self.gui.step6_batch_confirm, timeout=None)
+        self.call_in_gui_thread(self.gui.step6_batch_confirm, file_count, record_count, timeout=None)
+        self.wait_for_popup_close()
         print("✅ Adım 6 tamamlandı")
         return True
         
@@ -803,10 +819,11 @@ class EnterpriseRPABot:
         self.log_step("✅ Gerçekten tüm işlemler bitti - FAZ 4 başlıyor", 1.0)
 
         self.log_step("✅ Adım 6: Toplu onay işlemi gerçekleştiriliyor...", 1.0)
-        self.call_in_gui_thread(self.gui.step6_batch_confirm, timeout=None)
-
         total_files = len(self.excel_files)
         total_records = self.total_records_processed
+        self.execute_step6_batch_confirm(total_files, total_records)
+
+        # Sonuç istatistikleri
         success_rate = (
             total_records / (total_records + self.failed_records) * 100
         ) if (total_records + self.failed_records) > 0 else 0
