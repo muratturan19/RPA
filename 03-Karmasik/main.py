@@ -64,7 +64,7 @@ def start_gui_only() -> None:
     print("🖥️ Enterprise GUI başlatılıyor...")
     print("📊 Karmaşık navigasyon sistemi yükleniyor...")
 
-    from advanced_gui import EnterpriseGUI
+    from gui.base_gui import EnterpriseGUI
 
     gui_app = EnterpriseGUI()
     print("✅ GUI hazır - Enterprise ERP Sistemi aktif")
@@ -81,7 +81,7 @@ def start_rpa_only() -> None:
 
     print("🤖 RPA bot'u başlatılıyor...")
 
-    from rpa_bot import EnterpriseRPABot
+    from rpa.core_engine import EnterpriseRPABot
 
     rpa_bot = EnterpriseRPABot()
     rpa_bot.set_gui_reference(gui_app)
@@ -110,8 +110,8 @@ def start_both_integrated() -> None:
     print("📊 Dashboard + RPA eş zamanlı çalışacak")
     print("🎨 Enterprise tema aktif")
 
-    from advanced_gui import EnterpriseGUI
-    from rpa_bot import EnterpriseRPABot
+    from gui.base_gui import EnterpriseGUI
+    from rpa.core_engine import EnterpriseRPABot
 
     # GUI'yi başlat
     gui_app = EnterpriseGUI()
@@ -180,7 +180,7 @@ def handle_streamlit_request(file_paths: List[str], progress_callback: Callable 
     # GUI'yi başlat (thread'de)
     def start_gui_thread():
         global gui_app
-        from advanced_gui import EnterpriseGUI
+        from gui.base_gui import EnterpriseGUI
 
         gui_app = EnterpriseGUI()
         gui_app.set_processing_files(excel_files)
@@ -196,7 +196,7 @@ def handle_streamlit_request(file_paths: List[str], progress_callback: Callable 
     # RPA'yi başlat (thread'de)
     def start_rpa_thread():
         global rpa_bot
-        from rpa_bot import EnterpriseRPABot
+        from rpa.core_engine import EnterpriseRPABot
 
         rpa_bot = EnterpriseRPABot()
         rpa_bot.set_gui_reference(gui_app)
@@ -222,7 +222,7 @@ def run_rpa_with_gui(excel_paths: List[Path], progress_callback: Callable = None
         """DÜZELTME: GUI worker thread - hata yönetimi ile"""
         global gui_app
         try:
-            from advanced_gui import EnterpriseGUI
+            from gui.base_gui import EnterpriseGUI
             gui_app = EnterpriseGUI()
             gui_app.set_processing_files(excel_paths)
             gui_app.run()
@@ -253,7 +253,7 @@ def run_rpa_with_gui(excel_paths: List[Path], progress_callback: Callable = None
 
     # DÜZELTME: RPA'yi ana thread'de çalıştır - hata yönetimi ile
     try:
-        from rpa_bot import EnterpriseRPABot
+        from rpa.core_engine import EnterpriseRPABot
 
         rpa_bot = EnterpriseRPABot()
         rpa_bot.set_gui_reference(gui_app)
