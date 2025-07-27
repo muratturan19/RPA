@@ -167,50 +167,6 @@ def start_streamlit_server(port: int = 8501) -> subprocess.Popen:
         return None
 
 
-def handle_streamlit_request(file_paths: List[str], progress_callback: Callable = None):
-    """Streamlit'ten gelen dosya işleme isteğini yönet"""
-    global gui_app, rpa_bot
-
-    print("📨 Streamlit'ten dosya işleme isteği alındı")
-    print(f"📁 İşlenecek dosyalar: {len(file_paths)}")
-
-    # Dosya yollarını Path objesine çevir
-    excel_files = [Path(fp) for fp in file_paths]
-
-    # GUI'yi başlat (thread'de)
-    def start_gui_thread():
-        global gui_app
-        from gui.base_gui import EnterpriseGUI
-
-        gui_app = EnterpriseGUI()
-        gui_app.set_processing_files(excel_files)
-        gui_app.run()
-
-    gui_thread = threading.Thread(target=start_gui_thread, daemon=True)
-    gui_thread.start()
-    active_threads.append(gui_thread)
-
-    # GUI'nin yüklenmesini bekle
-    time.sleep(3)
-
-    # RPA'yi başlat (thread'de)
-    def start_rpa_thread():
-        global rpa_bot
-        from rpa.core_engine import EnterpriseRPABot
-
-        rpa_bot = EnterpriseRPABot()
-        rpa_bot.set_gui_reference(gui_app)
-        rpa_bot.set_processing_speed("fast")  # Streamlit için hızlı
-
-        # Progress callback'i ayarla
-        rpa_bot.run(excel_files, progress_callback)
-
-    rpa_thread = threading.Thread(target=start_rpa_thread, daemon=True)
-    rpa_thread.start()
-    active_threads.append(rpa_thread)
-
-    return rpa_thread
-
 
 def run_rpa_with_gui(excel_paths: List[Path], progress_callback: Callable = None):
     """DÜZELTME: Streamlit entegrasyonu - Gelişmiş hata yönetimi"""
