@@ -9,6 +9,7 @@ import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any, Callable, Optional
 import tkinter as tk
+from tkinter import messagebox
 import pyautogui
 import random
 from datetime import datetime
@@ -809,10 +810,6 @@ class EnterpriseRPABot:
 
         self.show_final_completion_dialog(total_records, total_files, success_rate)
 
-        # Opsiyonel: Modal hâlâ açıksa kapat
-        if self.gui and getattr(self.gui, 'data_entry_window', None):
-            self.call_in_gui_thread(self.gui.close_modal)
-
         self.log_step("✅ FAZ 4 TAMAMLANDI: Tüm işlemler bitti", 2.0)
 
     def show_final_completion_dialog(self, total_records: int, total_files: int, success_rate: float):
@@ -820,63 +817,25 @@ class EnterpriseRPABot:
         if not self.gui:
             return
 
-        def show_dialog():
-            completion_dialog = tk.Toplevel(self.gui.root)
-            completion_dialog.title("🎉 RPA İşlemi Tamamlandı")
-            completion_dialog.geometry("500x350")
-            completion_dialog.configure(bg='#1e1e2e')
+        stats_text = (
+            f"📁 İşlenen Dosya: {total_files}\n"
+            f"📋 Toplam Kayıt: {total_records}\n"
+            f"📈 Başarı Oranı: %{success_rate:.1f}"
+        )
 
-            # Merkezi konum
-            x = (completion_dialog.winfo_screenwidth() // 2) - 250
-            y = (completion_dialog.winfo_screenheight() // 2) - 175
-            completion_dialog.geometry(f"500x350+{x}+{y}")
+        # Bilgi kutusunu GUI thread'inde göster
+        self.call_in_gui_thread(
+            messagebox.showinfo,
+            "Tamamlandı",
+            stats_text,
+            parent=self.gui.root,
+        )
 
-            # Üstte kal ve modal yap
-            completion_dialog.attributes('-topmost', True)
-            completion_dialog.grab_set()
-            completion_dialog.focus_set()
-
-            tk.Label(completion_dialog, text="🎉", font=('Segoe UI', 48), bg='#1e1e2e', fg='#a6e3a1').pack(pady=20)
-            tk.Label(
-                completion_dialog,
-                text="RPA İşlemi Başarıyla Tamamlandı!",
-                font=('Segoe UI', 16, 'bold'),
-                bg='#1e1e2e',
-                fg='#cdd6f4',
-            ).pack(pady=10)
-
-            stats_text = f"""
-📊 İşlem Sonuçları:
-        
-📁 İşlenen Dosya: {total_files}
-📋 Toplam Kayıt: {total_records}
-📈 Başarı Oranı: %{success_rate:.1f}
-⏱️ Süre: {time.time() - self.start_time:.1f} saniye
-
-✅ Tüm veriler sisteme aktarıldı!
-        """
-
-            tk.Label(
-                completion_dialog,
-                text=stats_text,
-                font=('Segoe UI', 11),
-                justify='center',
-                bg='#1e1e2e',
-                fg='#cdd6f4',
-            ).pack(pady=20)
-
-            tk.Button(
-                completion_dialog,
-                text="Tamam",
-                command=completion_dialog.destroy,
-                bg='#89b4fa',
-                fg='#1e1e2e',
-                font=('Segoe UI', 12, 'bold'),
-                width=15,
-                height=2,
-            ).pack(pady=20)
-
-        self.call_in_gui_thread(show_dialog)
+        # Kullanıcı onayladıktan sonra modal'ı kapat ve GUI'yi sonlandır
+        if getattr(self.gui, "data_entry_window", None):
+            self.call_in_gui_thread(self.gui.close_modal)
+        self.call_in_gui_thread(self.gui.root.quit)
+        self.call_in_gui_thread(self.gui.root.destroy)
         
     # === ANA RPA SÜREÇ YÖNETİMİ ===
     
