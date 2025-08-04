@@ -8,3 +8,4 @@ pyautogui
 pytesseract
 Pillow
 opencv-python
+python-docx

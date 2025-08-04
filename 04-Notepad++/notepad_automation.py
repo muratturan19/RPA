@@ -23,6 +23,11 @@ class NotepadPPAutomation:
         subprocess.Popen([self.executable])
         time.sleep(2)  # wait for the window to appear
 
+    def new_file(self) -> None:
+        """Open a new blank document in Notepad++."""
+        pyautogui.hotkey("ctrl", "n")
+        time.sleep(0.2)
+
     def write_text(self, text: str, interval: float = 0.05) -> None:
         """Type text into the active Notepad++ window."""
         pyautogui.typewrite(text, interval=interval)
@@ -33,6 +38,11 @@ class NotepadPPAutomation:
         time.sleep(0.5)
         pyautogui.typewrite(path)
         pyautogui.press("enter")
+
+    def close(self) -> None:
+        """Close the active Notepad++ window."""
+        pyautogui.hotkey("alt", "f4")
+        time.sleep(0.5)
 
     def click_menu(self, image_path: str, confidence: float = 0.8) -> bool:
         """Click a menu or button identified by an image template."""
