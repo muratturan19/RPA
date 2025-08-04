@@ -1,0 +1,10 @@
+streamlit
+reportlab
+pandas
+openpyxl
+numpy
+pyautogui
+
+pytesseract
+Pillow
+opencv-python
