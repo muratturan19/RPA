@@ -32,6 +32,11 @@ Sadece Streamlit panelini başlatmak isterseniz:
 streamlit run app.py
 ```
 
+Notepad++ otomasyonunu tetiklemek için sade bir arayüz:
+```bash
+streamlit run notepad_app.py
+```
+
 Streamlit paneli üzerinden Excel dosyalarını yükleyip işle başlatabilirsiniz. Panel, `app.py` dosyasında tanımlıdır ve arka planda `main.py` üzerinden RPA botunu tetikler.
 
 ## Dosya Yapısı
@@ -39,6 +44,7 @@ Streamlit paneli üzerinden Excel dosyalarını yükleyip işle başlatabilirsin
 - `advanced_gui.py`: Gelişmiş Tkinter tabanlı ERP arayüzü
 - `rpa_bot.py`: Excel verilerini bu arayüz üzerinden işleyen otomasyon botu
 - `app.py`: Drag & Drop özellikli Streamlit paneli
+- `notepad_app.py`: .txt/.docx dosyasını Notepad++ üzerinden kaydeden basit arayüz
 - `main.py`: Yukarıdaki bileşenleri yöneten ana kontrol merkezi
 
 ## Adım Onayı
