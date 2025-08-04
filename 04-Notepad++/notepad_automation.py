@@ -44,6 +44,39 @@ class NotepadPPAutomation:
         pyautogui.hotkey("alt", "f4")
         time.sleep(0.5)
 
+    # --- Mouse based interactions ---------------------------------
+    def new_file_mouse(self, image_dir: str = "images") -> None:
+        """Open a new file by clicking menu items instead of using hotkeys.
+
+        Parameters
+        ----------
+        image_dir: str
+            Directory containing the screenshot templates like
+            ``file_menu.png`` and ``new_file.png`` used for visual search.
+        """
+        self.click_menu(Path(image_dir) / "file_menu.png")
+        time.sleep(0.2)
+        self.click_menu(Path(image_dir) / "new_file.png")
+        time.sleep(0.2)
+
+    def save_file_mouse(self, path: str, image_dir: str = "images") -> None:
+        """Save the current document using mouse clicks.
+
+        This method avoids keyboard shortcuts by opening the *File* menu and
+        clicking the *Save* option through template matching.
+        """
+        self.click_menu(Path(image_dir) / "file_menu.png")
+        time.sleep(0.2)
+        self.click_menu(Path(image_dir) / "save_file.png")
+        time.sleep(0.5)
+        pyautogui.typewrite(path)
+        pyautogui.press("enter")
+
+    def close_mouse(self, image_dir: str = "images") -> None:
+        """Close Notepad++ by clicking the window close button."""
+        self.click_menu(Path(image_dir) / "close_button.png")
+        time.sleep(0.5)
+
     def click_menu(self, image_path: str, confidence: float = 0.8) -> bool:
         """Click a menu or button identified by an image template."""
         location = locate_on_screen(image_path, confidence)
