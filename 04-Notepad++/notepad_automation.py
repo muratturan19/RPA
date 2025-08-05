@@ -157,6 +157,11 @@ class NotepadPPAutomation:
         confidence: float, optional
             Image match confidence forwarded to :meth:`click_menu`.
         """
+        # Ensure the main window is active and dismiss any dialogs like the
+        # advanced search panel which might steal subsequent clicks or
+        # keystrokes.
+        self._focus_editor()
+
         file_menu = Path(image_dir) / self.templates["file_menu"]
         save_file = Path(image_dir) / self.templates["save_file"]
         self.click_menu(file_menu, confidence)
@@ -176,6 +181,10 @@ class NotepadPPAutomation:
         confidence: float, optional
             Image match confidence forwarded to :meth:`click_menu`.
         """
+        # Bring the Notepad++ window to the foreground and close any stray
+        # pop-ups before attempting to click the close button.
+        self._focus_editor()
+
         close_button = Path(image_dir) / self.templates["close_button"]
         self.click_menu(close_button, confidence)
         time.sleep(0.5)
