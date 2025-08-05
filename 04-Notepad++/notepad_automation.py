@@ -4,7 +4,7 @@ from __future__ import annotations
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import pyautogui
 
@@ -15,8 +15,22 @@ from vision_utils import locate_on_screen
 class NotepadPPAutomation:
     """Simple helper for automating Notepad++ actions."""
 
-    def __init__(self, executable: str = "notepad++"):
+    # Default mapping for numbered screenshot templates
+    DEFAULT_TEMPLATES: Dict[str, str] = {
+        "file_menu": "1.jpg",
+        "new_file": "2.jpg",
+        "save_file": "3.jpg",
+        "close_button": "4.jpg",
+    }
+
+    def __init__(
+        self,
+        executable: str = "notepad++",
+        templates: Optional[Dict[str, str]] = None,
+    ) -> None:
         self.executable = executable
+        # Allow overriding of template filenames
+        self.templates = {**self.DEFAULT_TEMPLATES, **(templates or {})}
 
     def launch(self) -> None:
         """Launch Notepad++ application."""
@@ -51,12 +65,15 @@ class NotepadPPAutomation:
         Parameters
         ----------
         image_dir: str
-            Directory containing the screenshot templates like
-            ``file_menu.png`` and ``new_file.png`` used for visual search.
+            Directory containing screenshot templates. By default the
+            automation expects sequentially named files such as ``1.jpg``
+            (File menu) and ``2.jpg`` (New file).
         """
-        self.click_menu(Path(image_dir) / "file_menu.png")
+        file_menu = Path(image_dir) / self.templates["file_menu"]
+        new_file = Path(image_dir) / self.templates["new_file"]
+        self.click_menu(file_menu)
         time.sleep(0.2)
-        self.click_menu(Path(image_dir) / "new_file.png")
+        self.click_menu(new_file)
         time.sleep(0.2)
 
     def save_file_mouse(self, path: str, image_dir: str = "images") -> None:
@@ -65,16 +82,19 @@ class NotepadPPAutomation:
         This method avoids keyboard shortcuts by opening the *File* menu and
         clicking the *Save* option through template matching.
         """
-        self.click_menu(Path(image_dir) / "file_menu.png")
+        file_menu = Path(image_dir) / self.templates["file_menu"]
+        save_file = Path(image_dir) / self.templates["save_file"]
+        self.click_menu(file_menu)
         time.sleep(0.2)
-        self.click_menu(Path(image_dir) / "save_file.png")
+        self.click_menu(save_file)
         time.sleep(0.5)
         pyautogui.typewrite(path)
         pyautogui.press("enter")
 
     def close_mouse(self, image_dir: str = "images") -> None:
         """Close Notepad++ by clicking the window close button."""
-        self.click_menu(Path(image_dir) / "close_button.png")
+        close_button = Path(image_dir) / self.templates["close_button"]
+        self.click_menu(close_button)
         time.sleep(0.5)
 
     def click_menu(self, image_path: str, confidence: float = 0.8) -> bool:
