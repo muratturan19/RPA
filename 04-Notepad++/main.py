@@ -105,9 +105,10 @@ def start_rpa_only() -> None:
 def start_notepad_demo() -> None:
     """Basit Notepad++ otomasyon demoesi."""
     print("📝 Notepad++ otomasyonu başlatılıyor...")
-    from notepad_automation import NotepadPPAutomation
+    from notepad_automation import NotepadPPAutomation, NOTEPAD_PATH
 
-    bot = NotepadPPAutomation()
+    notepad_path = NOTEPAD_PATH
+    bot = NotepadPPAutomation(executable=notepad_path)
     bot.launch()
     bot.write_text("Merhaba Notepad++!\nBu bir RPA demosudur.")
     bot.save_file("notepad_demo.txt")

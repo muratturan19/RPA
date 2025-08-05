@@ -12,6 +12,10 @@ from ocr_utils import ocr_screen
 from vision_utils import locate_on_screen
 
 
+# Windows sistemlerde Notepad++ uygulamasının varsayılan kurulum yolu.
+NOTEPAD_PATH = r"D:\\Program Files\\Notepad++\\notepad++.exe"
+
+
 class NotepadPPAutomation:
     """Simple helper for automating Notepad++ actions."""
 
@@ -25,7 +29,7 @@ class NotepadPPAutomation:
 
     def __init__(
         self,
-        executable: str = "notepad++",
+        executable: str = NOTEPAD_PATH,
         templates: Optional[Dict[str, str]] = None,
     ) -> None:
         self.executable = executable
