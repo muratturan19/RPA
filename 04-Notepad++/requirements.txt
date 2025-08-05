@@ -4,6 +4,7 @@ pandas
 openpyxl
 numpy
 pyautogui
+pyperclip
 
 pytesseract
 Pillow

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 import pyautogui
+import pyperclip
 
 from ocr_utils import ocr_screen
 from vision_utils import locate_on_screen
@@ -71,16 +72,33 @@ class NotepadPPAutomation:
         pyautogui.hotkey("ctrl", "n")
         time.sleep(0.2)
 
-    def write_text(self, text: str, interval: float = 0.05) -> None:
+    def write_text(
+        self, text: str, interval: float = 0.05, use_clipboard: bool = True
+    ) -> None:
         """Type text into the active Notepad++ editor.
 
-        Before typing we explicitly focus the editor area to prevent the
-        keystrokes from going into auxiliary dialogs such as the *Find*
-        box. A short delay is added after focusing to ensure the window is
-        ready to receive input.
+        Parameters
+        ----------
+        text: str
+            The string to type.
+        interval: float, optional
+            Delay between each character when ``use_clipboard`` is ``False``.
+        use_clipboard: bool, optional
+            If ``True`` (default) the text is copied to the clipboard and
+            pasted with ``Ctrl+V``. This avoids triggering unwanted keyboard
+            shortcuts (e.g. ``Ctrl+Alt+I``) when characters require ``AltGr``.
+            When set to ``False`` characters are sent one by one with the
+            specified ``interval``.
         """
         self._focus_editor()
-        pyautogui.typewrite(text, interval=interval)
+        if use_clipboard:
+            pyperclip.copy(text)
+            time.sleep(0.1)
+            pyautogui.hotkey("ctrl", "v")
+        else:
+            for char in text:
+                pyautogui.write(char)
+                time.sleep(interval)
 
     def save_file(self, path: str) -> None:
         """Save the current document to the given path.
