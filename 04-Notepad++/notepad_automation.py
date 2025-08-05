@@ -131,6 +131,10 @@ class NotepadPPAutomation:
         confidence: float, optional
             Image match confidence forwarded to :meth:`click_menu`.
         """
+        # Ensure editor window is active and close any pop-ups like the
+        # advanced search panel before using image-based clicks.
+        self._focus_editor()
+
         file_menu = Path(image_dir) / self.templates["file_menu"]
         new_file = Path(image_dir) / self.templates["new_file"]
         self.click_menu(file_menu, confidence)
