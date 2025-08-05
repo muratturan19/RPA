@@ -40,6 +40,12 @@ class NotepadPPAutomation:
         """Launch Notepad++ application."""
         subprocess.Popen([self.executable])
         time.sleep(2)  # wait for the window to appear
+        # Bring the application window to the foreground so that
+        # subsequent keyboard commands target Notepad++.
+        windows = pyautogui.getWindowsWithTitle("Notepad++")
+        if windows:
+            windows[0].activate()
+            time.sleep(0.2)
 
     def new_file(self) -> None:
         """Open a new blank document in Notepad++."""
@@ -51,11 +57,17 @@ class NotepadPPAutomation:
         pyautogui.typewrite(text, interval=interval)
 
     def save_file(self, path: str) -> None:
-        """Save the current document to the given path."""
-        pyautogui.hotkey("ctrl", "s")
+        """Save the current document to the given path.
+
+        ``Ctrl+Shift+S`` is used to always trigger the *Save As* dialog
+        even if the document already has a filename. This prevents
+        accidental typing into the editor when no dialog appears.
+        """
+        pyautogui.hotkey("ctrl", "shift", "s")
         time.sleep(0.5)
         pyautogui.typewrite(path)
         pyautogui.press("enter")
+        time.sleep(0.5)
 
     def close(self) -> None:
         """Close the active Notepad++ window."""

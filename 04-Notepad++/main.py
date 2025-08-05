@@ -110,8 +110,10 @@ def start_notepad_demo() -> None:
     notepad_path = NOTEPAD_PATH
     bot = NotepadPPAutomation(executable=notepad_path)
     bot.launch()
+    bot.new_file()
     bot.write_text("Merhaba Notepad++!\nBu bir RPA demosudur.")
     bot.save_file("notepad_demo.txt")
+    bot.close()
     print("✅ Notepad++ otomasyonu tamamlandı")
 
 
